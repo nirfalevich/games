@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>משחק הזיכרון</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --pink: #ffb6d9;
+    --pink-deep: #ff6fa3;
+    --purple: #c8a2ff;
+    --purple-deep: #8e5cf0;
+    --gold: #ffd86b;
+    --gold-deep: #e6a800;
+    --green: #5cb85c;
+    --green-deep: #3a8a3a;
+    --teal: #4ec0a8;
+    --teal-deep: #2a8a78;
+    --bg1: #ffe9f3;
+    --bg2: #f3e0ff;
+    --bg3: #fff7d6;
+    --shadow: 0 8px 24px rgba(155, 81, 161, 0.25);
+    --accent-1: var(--pink-deep);
+    --accent-2: var(--purple-deep);
+    --text-strong: #6b2d8a;
+    --text-soft: #b07cc4;
+  }
+
+  body.theme-dinosaurs {
+    --bg1: #d8f0d8;
+    --bg2: #c8e8e0;
+    --bg3: #f0f5b8;
+    --shadow: 0 8px 24px rgba(58, 138, 58, 0.25);
+    --accent-1: var(--green-deep);
+    --accent-2: var(--teal-deep);
+    --text-strong: #2a5a2a;
+    --text-soft: #6a9a6a;
+  }
+
+  body.theme-mario {
+    --bg1: #cce6ff;
+    --bg2: #fff0c8;
+    --bg3: #ffd6d6;
+    --shadow: 0 8px 24px rgba(232, 51, 42, 0.28);
+    --accent-1: #e8332a;
+    --accent-2: #1a4ec8;
+    --text-strong: #8a1010;
+    --text-soft: #c47070;
+  }
+
+  body.theme-pawpatrol {
+    --bg1: #cfe6ff;
+    --bg2: #fff8d6;
+    --bg3: #ffd9e0;
+    --shadow: 0 8px 24px rgba(48, 96, 224, 0.28);
+    --accent-1: #e8332a;
+    --accent-2: #3060e0;
+    --text-strong: #1a3a8a;
+    --text-soft: #6b88c0;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: "Heebo", "Rubik", "Segoe UI", system-ui, sans-serif;
+    background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+    user-select: none;
+    transition: background 0.4s ease;
+  }
+
+  body::before, body::after {
+    content: "";
+    position: fixed;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 0;
+    pointer-events: none;
+    transition: background 0.4s ease;
+  }
+  body::before {
+    background: rgba(255, 182, 217, 0.5);
+    top: -200px; right: -200px;
+  }
+  body::after {
+    background: rgba(200, 162, 255, 0.45);
+    bottom: -200px; left: -200px;
+  }
+  body.theme-dinosaurs::before { background: rgba(92, 184, 92, 0.4); }
+  body.theme-dinosaurs::after  { background: rgba(78, 192, 168, 0.4); }
+  body.theme-mario::before     { background: rgba(232, 51, 42, 0.35); }
+  body.theme-mario::after      { background: rgba(26, 78, 200, 0.35); }
+  body.theme-pawpatrol::before { background: rgba(232, 51, 42, 0.30); }
+  body.theme-pawpatrol::after  { background: rgba(48, 96, 224, 0.32); }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 10px 14px 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+  }
+  h1 {
+    font-size: clamp(20px, 3.2vw, 30px);
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-2), var(--gold-deep));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.5px;
+    margin-bottom: 2px;
+    line-height: 1.15;
+  }
+  .subtitle {
+    color: var(--text-strong);
+    opacity: 0.75;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* Theme picker */
+  .theme-picker {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px 0 4px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .theme-btn {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(8px);
+    border: 2px solid transparent;
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-strong);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: all 0.2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .theme-btn:hover {
+    transform: translateY(-2px);
+  }
+  .theme-btn.active {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: white;
+    border-color: white;
+  }
+  .theme-btn .emoji { font-size: 16px; }
+
+  .hud {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 6px 0 10px;
+    flex-shrink: 0;
+  }
+  .stat {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 5px 14px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    color: var(--text-strong);
+    min-width: 80px;
+    justify-content: center;
+  }
+  .stat .label {
+    font-size: 10px;
+    color: var(--text-soft);
+    font-weight: 600;
+    line-height: 1;
+  }
+  .stat .value {
+    font-size: 17px;
+    font-weight: 900;
+    color: var(--accent-2);
+    line-height: 1.1;
+  }
+  .btn {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.2); }
+  .btn:active { transform: translateY(0); }
+
+  /* Board: a 4x4 grid of 3:4 cards. Whole board is therefore 3:4
+     (4 cols * 3 wide vs 4 rows * 4 tall = 12:16 = 3:4).
+     We size the board's HEIGHT by whichever is tighter — viewport height
+     or available width — and let aspect-ratio derive the width. This
+     guarantees the board fills as much space as possible without
+     overflowing on any screen size. */
+  .board-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    width: 100%;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: clamp(4px, 1vh, 10px);
+    aspect-ratio: 3/4;
+    /* Two-way cap: 72% of viewport height OR width-based limit */
+    height: min(72vh, calc((100vw - 32px) * 4 / 3));
+    max-height: 760px;
+  }
+
+  .card {
+    perspective: 1000px;
+    cursor: pointer;
+    min-width: 0;
+    min-height: 0;
+  }
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .card.flipped .card-inner,
+  .card.matched .card-inner {
+    transform: rotateY(180deg);
+  }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .card-back {
+    background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255,255,255,0.5);
+  }
+  .card-back::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border: 2px dashed rgba(255,255,255,0.45);
+    border-radius: 12px;
+  }
+  .card-back-icon {
+    width: 65%;
+    height: 65%;
+    color: white;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+  }
+  .card-front {
+    transform: rotateY(180deg);
+    background: linear-gradient(180deg, #fff7fb 0%, #ffe4f2 100%);
+    border: 3px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+  }
+  body.theme-dinosaurs .card-front {
+    background: linear-gradient(180deg, #f5fff0 0%, #d8f0c8 100%);
+  }
+  body.theme-mario .card-front {
+    background: linear-gradient(180deg, #fffbe8 0%, #fff0c0 100%);
+  }
+  body.theme-mario .modal {
+    background: linear-gradient(180deg, #fff 0%, #fff5d8 100%);
+  }
+  body.theme-mario .modal .stats-row .stat { background: #ffe8d0; }
+  body.theme-mario .overlay { background: rgba(140, 30, 20, 0.55); }
+
+  body.theme-pawpatrol .card-front {
+    background: linear-gradient(180deg, #f0f7ff 0%, #d8e8ff 100%);
+  }
+  body.theme-pawpatrol .modal {
+    background: linear-gradient(180deg, #fff 0%, #e8f0ff 100%);
+  }
+  body.theme-pawpatrol .modal .stats-row .stat { background: #d8e8ff; }
+  body.theme-pawpatrol .overlay { background: rgba(20, 50, 130, 0.55); }
+  .card-front svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .card.matched .card-front {
+    background: linear-gradient(180deg, #fff8d6 0%, #ffe9b0 100%);
+    border-color: var(--gold);
+    animation: matched-pulse 0.7s ease;
+    box-shadow: 0 0 24px rgba(255,216,107,0.7);
+  }
+  @keyframes matched-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  /* Win overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(75, 30, 110, 0.55);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    animation: fadein 0.4s ease;
+  }
+  body.theme-dinosaurs .overlay {
+    background: rgba(40, 90, 50, 0.55);
+  }
+  .overlay.show { display: flex; }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: linear-gradient(180deg, #fff 0%, #fff5fa 100%);
+    border-radius: 28px;
+    padding: 36px 32px;
+    text-align: center;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  body.theme-dinosaurs .modal {
+    background: linear-gradient(180deg, #fff 0%, #f0fae0 100%);
+  }
+  @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h2 {
+    font-size: 32px;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 8px;
+  }
+  .modal .crown { font-size: 60px; margin-bottom: 8px; }
+  .modal p { color: var(--text-strong); margin-bottom: 8px; font-size: 16px; }
+  .modal .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 16px 0 22px;
+  }
+  .modal .stats-row .stat { background: #fde8f3; }
+  body.theme-dinosaurs .modal .stats-row .stat { background: #e0f2d8; }
+
+  /* Confetti */
+  .confetti {
+    position: fixed;
+    width: 10px; height: 14px;
+    top: -20px;
+    z-index: 49;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); }
+  }
+
+  /* When viewport is very short, shrink even further */
+  @media (max-height: 640px) {
+    .subtitle { display: none; }
+    h1 { font-size: 18px; }
+    .app { padding: 6px 10px 8px; }
+    .theme-picker { margin: 4px 0 2px; }
+    .hud { margin: 4px 0 6px; }
+    .stat { padding: 3px 10px; min-width: 70px; }
+    .stat .value { font-size: 14px; }
+    .btn { padding: 6px 14px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1 id="title">👑 משחק הזיכרון של הנסיכות 👑</h1>
+    <div class="subtitle">מצאי את כל הזוגות במספר המהלכים הקטן ביותר</div>
+  </header>
+
+  <div class="theme-picker" id="themePicker"></div>
+
+  <div class="hud">
+    <div class="stat"><div><div class="label">מהלכים</div><div class="value" id="moves">0</div></div></div>
+    <div class="stat"><div><div class="label">זוגות</div><div class="value"><span id="pairs">0</span>/8</div></div></div>
+    <div class="stat"><div><div class="label">זמן</div><div class="value" id="timer">0:00</div></div></div>
+    <button class="btn" id="restart">משחק חדש</button>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="crown" id="winEmoji">👑</div>
+    <h2>כל הכבוד!</h2>
+    <p id="winMessage">השלמת את משחק הזיכרון</p>
+    <div class="stats-row">
+      <div class="stat"><div><div class="label">מהלכים</div><div class="value" id="finalMoves">0</div></div></div>
+      <div class="stat"><div><div class="label">זמן</div><div class="value" id="finalTime">0:00</div></div></div>
+    </div>
+    <button class="btn" id="playAgain">לשחק שוב</button>
+  </div>
+</div>
+
+<script>
+// ==========================================================
+// PRINCESS SVG FACTORY
+// ==========================================================
+function makePrincess({skin, hair, hairStyle, dress, dressAccent, crown, gem, name, cheek}) {
+  let hairBack = "", hairFront = "", hairExtra = "";
+
+  if (hairStyle === "long") {
+    hairBack = `<path d="M40 90 Q30 130 35 200 L75 200 Q70 140 80 100 Z" fill="${hair}"/>
+                <path d="M160 90 Q170 130 165 200 L125 200 Q130 140 120 100 Z" fill="${hair}"/>`;
+    hairFront = `<path d="M55 75 Q100 50 145 75 Q145 90 130 92 Q115 80 100 80 Q85 80 70 92 Q55 90 55 75 Z" fill="${hair}"/>`;
+  } else if (hairStyle === "bun") {
+    hairBack = `<circle cx="100" cy="42" r="22" fill="${hair}"/>
+                <circle cx="100" cy="42" r="22" fill="none" stroke="${dressAccent}" stroke-width="2" stroke-dasharray="4 3"/>`;
+    hairFront = `<path d="M58 80 Q100 58 142 80 Q142 92 130 92 Q115 82 100 82 Q85 82 70 92 Q58 92 58 80 Z" fill="${hair}"/>`;
+  } else if (hairStyle === "braid") {
+    hairBack = `<path d="M48 95 Q42 130 50 175 Q55 195 65 200 L75 195 Q70 150 80 105 Z" fill="${hair}"/>
+                <path d="M152 95 Q158 130 150 175 Q145 195 135 200 L125 195 Q130 150 120 105 Z" fill="${hair}"/>
+                <ellipse cx="60" cy="135" rx="10" ry="6" fill="${hair}" opacity="0.7"/>
+                <ellipse cx="60" cy="155" rx="10" ry="6" fill="${hair}" opacity="0.7"/>
+                <ellipse cx="60" cy="175" rx="10" ry="6" fill="${hair}" opacity="0.7"/>`;
+    hairFront = `<path d="M55 78 Q100 52 145 78 Q145 92 130 94 Q115 82 100 82 Q85 82 70 94 Q55 92 55 78 Z" fill="${hair}"/>`;
+  } else if (hairStyle === "curly") {
+    hairBack = `<circle cx="48" cy="95" r="14" fill="${hair}"/>
+                <circle cx="42" cy="120" r="14" fill="${hair}"/>
+                <circle cx="48" cy="148" r="14" fill="${hair}"/>
+                <circle cx="55" cy="175" r="13" fill="${hair}"/>
+                <circle cx="152" cy="95" r="14" fill="${hair}"/>
+                <circle cx="158" cy="120" r="14" fill="${hair}"/>
+                <circle cx="152" cy="148" r="14" fill="${hair}"/>
+                <circle cx="145" cy="175" r="13" fill="${hair}"/>`;
+    hairFront = `<path d="M52 78 Q100 48 148 78 Q148 92 132 94 Q115 80 100 80 Q85 80 68 94 Q52 92 52 78 Z" fill="${hair}"/>
+                 <circle cx="68" cy="70" r="9" fill="${hair}"/>
+                 <circle cx="100" cy="58" r="9" fill="${hair}"/>
+                 <circle cx="132" cy="70" r="9" fill="${hair}"/>`;
+  } else if (hairStyle === "ponytail") {
+    hairBack = `<path d="M140 88 Q175 100 178 145 Q170 175 155 178 Q165 150 150 105 Z" fill="${hair}"/>`;
+    hairFront = `<path d="M55 80 Q100 52 148 82 Q148 95 132 96 Q115 82 100 82 Q85 82 70 95 Q55 94 55 80 Z" fill="${hair}"/>`;
+    hairExtra = `<circle cx="148" cy="95" r="8" fill="${dressAccent}"/>`;
+  } else if (hairStyle === "wavy") {
+    hairBack = `<path d="M42 92 Q35 130 45 165 Q40 185 55 200 Q60 185 55 170 Q50 145 60 110 Z" fill="${hair}"/>
+                <path d="M158 92 Q165 130 155 165 Q160 185 145 200 Q140 185 145 170 Q150 145 140 110 Z" fill="${hair}"/>`;
+    hairFront = `<path d="M55 78 Q70 60 100 55 Q130 60 145 78 Q145 92 130 95 Q120 78 100 78 Q80 78 70 95 Q55 92 55 78 Z" fill="${hair}"/>`;
+  } else if (hairStyle === "twin") {
+    hairBack = `<ellipse cx="40" cy="135" rx="14" ry="38" fill="${hair}"/>
+                <ellipse cx="160" cy="135" rx="14" ry="38" fill="${hair}"/>
+                <circle cx="40" cy="100" r="8" fill="${dressAccent}"/>
+                <circle cx="160" cy="100" r="8" fill="${dressAccent}"/>`;
+    hairFront = `<path d="M55 78 Q100 52 145 78 Q145 92 130 94 Q115 82 100 82 Q85 82 70 94 Q55 92 55 78 Z" fill="${hair}"/>`;
+  }
+
+  let crownSvg = "";
+  if (crown === "tiara") {
+    crownSvg = `<path d="M65 56 L80 38 L92 50 L100 32 L108 50 L120 38 L135 56 L132 62 L68 62 Z" fill="${gem}" stroke="#b8860b" stroke-width="1.5"/>
+                <circle cx="100" cy="40" r="4" fill="#fff" opacity="0.9"/>
+                <circle cx="80" cy="48" r="3" fill="#fff" opacity="0.7"/>
+                <circle cx="120" cy="48" r="3" fill="#fff" opacity="0.7"/>`;
+  } else if (crown === "classic") {
+    crownSvg = `<path d="M62 58 L70 38 L82 52 L100 30 L118 52 L130 38 L138 58 L132 64 L68 64 Z" fill="${gem}" stroke="#b8860b" stroke-width="1.5"/>
+                <circle cx="70" cy="38" r="3.5" fill="#ff5577"/>
+                <circle cx="100" cy="30" r="4.5" fill="#3399ff"/>
+                <circle cx="130" cy="38" r="3.5" fill="#22cc66"/>`;
+  } else if (crown === "star") {
+    crownSvg = `<path d="M65 60 L75 42 L100 28 L125 42 L135 60 L130 64 L70 64 Z" fill="${gem}" stroke="#5a3a90" stroke-width="1.5"/>
+                <polygon points="100,32 103,40 112,40 105,46 108,55 100,50 92,55 95,46 88,40 97,40" fill="#fff"/>`;
+  } else if (crown === "leaf") {
+    crownSvg = `<path d="M62 62 Q70 40 85 50 Q92 38 100 50 Q108 38 115 50 Q130 40 138 62 Z" fill="${gem}" stroke="#3a7a3a" stroke-width="1.5"/>
+                <ellipse cx="78" cy="50" rx="5" ry="8" fill="#fff" opacity="0.6"/>
+                <ellipse cx="100" cy="46" rx="5" ry="8" fill="#fff" opacity="0.6"/>
+                <ellipse cx="122" cy="50" rx="5" ry="8" fill="#fff" opacity="0.6"/>`;
+  } else if (crown === "ice") {
+    crownSvg = `<path d="M62 60 L72 36 L82 56 L92 32 L100 56 L108 32 L118 56 L128 36 L138 60 L132 64 L68 64 Z" fill="${gem}" stroke="#5a90c4" stroke-width="1.5"/>
+                <circle cx="92" cy="48" r="3" fill="#fff"/>
+                <circle cx="108" cy="48" r="3" fill="#fff"/>`;
+  } else if (crown === "shell") {
+    crownSvg = `<path d="M62 62 Q65 42 80 48 Q90 35 100 48 Q110 35 120 48 Q135 42 138 62 Z" fill="${gem}" stroke="#c4768a" stroke-width="1.5"/>
+                <path d="M82 58 Q90 40 98 58 M102 58 Q110 40 118 58" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.7"/>`;
+  } else if (crown === "sun") {
+    crownSvg = `<circle cx="100" cy="48" r="14" fill="${gem}" stroke="#cc8800" stroke-width="1.5"/>
+                <g stroke="${gem}" stroke-width="3" stroke-linecap="round">
+                  <line x1="100" y1="22" x2="100" y2="32"/>
+                  <line x1="78" y1="32" x2="84" y2="40"/>
+                  <line x1="122" y1="32" x2="116" y2="40"/>
+                  <line x1="68" y1="50" x2="78" y2="50"/>
+                  <line x1="132" y1="50" x2="122" y2="50"/>
+                </g>
+                <circle cx="100" cy="48" r="5" fill="#fff" opacity="0.7"/>`;
+  } else if (crown === "heart") {
+    crownSvg = `<path d="M65 58 L80 40 L100 30 L120 40 L135 58 L132 64 L68 64 Z" fill="${gem}" stroke="#c43d6e" stroke-width="1.5"/>
+                <path d="M93 42 C90 38, 84 38, 84 44 C84 50, 93 56, 100 60 C107 56, 116 50, 116 44 C116 38, 110 38, 107 42 C104 38, 96 38, 93 42 Z" fill="#fff"/>`;
+  }
+
+  return `
+<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg-${name}" cx="50%" cy="60%">
+      <stop offset="0%" stop-color="${dressAccent}" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="${dressAccent}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="200" height="240" fill="url(#bg-${name})"/>
+  <path d="M55 200 Q60 165 75 145 L125 145 Q140 165 145 200 L155 230 L45 230 Z" fill="${dress}"/>
+  <path d="M75 145 L125 145 L130 175 L70 175 Z" fill="${dressAccent}" opacity="0.55"/>
+  <circle cx="100" cy="160" r="4" fill="${gem}"/>
+  <circle cx="85" cy="195" r="3" fill="${gem}" opacity="0.8"/>
+  <circle cx="115" cy="195" r="3" fill="${gem}" opacity="0.8"/>
+  <rect x="92" y="130" width="16" height="18" fill="${skin}"/>
+  ${hairBack}
+  <ellipse cx="100" cy="100" rx="40" ry="44" fill="${skin}"/>
+  ${hairFront}
+  ${hairExtra}
+  <ellipse cx="85" cy="105" rx="4" ry="6" fill="#3a2a4a"/>
+  <ellipse cx="115" cy="105" rx="4" ry="6" fill="#3a2a4a"/>
+  <circle cx="86" cy="103" r="1.5" fill="#fff"/>
+  <circle cx="116" cy="103" r="1.5" fill="#fff"/>
+  <path d="M80 99 L78 96 M85 98 L84 95 M90 99 L91 96" stroke="#3a2a4a" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M110 99 L109 96 M115 98 L116 95 M120 99 L122 96" stroke="#3a2a4a" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M80 92 Q85 90 91 92" stroke="${hair}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M109 92 Q115 90 120 92" stroke="${hair}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="78" cy="118" rx="6" ry="4" fill="${cheek}" opacity="0.6"/>
+  <ellipse cx="122" cy="118" rx="6" ry="4" fill="${cheek}" opacity="0.6"/>
+  <path d="M100 110 Q98 118 100 122 Q102 118 100 110" fill="${skin}" stroke="#d4a890" stroke-width="0.8" opacity="0.6"/>
+  <path d="M92 128 Q100 134 108 128" stroke="#c43d6e" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M93 128 Q100 132 107 128 Z" fill="#ff7a9c" opacity="0.6"/>
+  ${crownSvg}
+</svg>`;
+}
+
+// ==========================================================
+// DINOSAUR SVGs (each one a unique character)
+// ==========================================================
+function dinoBg(name, color) {
+  return `<defs><radialGradient id="dbg-${name}" cx="50%" cy="65%">
+    <stop offset="0%" stop-color="${color}" stop-opacity="0.4"/>
+    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+  </radialGradient></defs>
+  <rect width="200" height="240" fill="url(#dbg-${name})"/>
+  <ellipse cx="100" cy="225" rx="75" ry="6" fill="rgba(0,0,0,0.12)"/>`;
+}
+
+function dinoFace(eyeX, eyeY) {
+  return `<circle cx="${eyeX}" cy="${eyeY}" r="8" fill="#fff" stroke="#2a2a2a" stroke-width="1.5"/>
+          <circle cx="${eyeX+1}" cy="${eyeY+1}" r="4.5" fill="#1a1a1a"/>
+          <circle cx="${eyeX+2.5}" cy="${eyeY-1}" r="1.5" fill="#fff"/>`;
+}
+
+const DINOSAURS = [
+  // 1. T-Rex
+  { name: "trex", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${dinoBg("trex", "#5cb85c")}
+    <!-- tail -->
+    <path d="M40 165 Q15 150 18 115 Q28 132 55 158 Z" fill="#3a8a3a"/>
+    <path d="M40 165 Q22 152 22 122 Q30 138 55 160 Z" fill="#5cb85c"/>
+    <!-- back legs -->
+    <path d="M75 195 L72 220 L92 220 L88 195 Z" fill="#3a8a3a"/>
+    <path d="M105 195 L102 220 L122 220 L118 195 Z" fill="#3a8a3a"/>
+    <ellipse cx="80" cy="222" rx="12" ry="4" fill="#2a6a2a"/>
+    <ellipse cx="110" cy="222" rx="12" ry="4" fill="#2a6a2a"/>
+    <!-- body -->
+    <ellipse cx="100" cy="160" rx="55" ry="42" fill="#5cb85c"/>
+    <!-- belly -->
+    <ellipse cx="105" cy="172" rx="35" ry="22" fill="#a8dca8"/>
+    <!-- tiny arm -->
+    <path d="M80 142 Q72 145 70 152" stroke="#3a8a3a" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M70 152 L66 156 M70 152 L67 158" stroke="#3a8a3a" stroke-width="2" stroke-linecap="round"/>
+    <!-- head -->
+    <ellipse cx="138" cy="105" rx="44" ry="38" fill="#5cb85c"/>
+    <!-- mouth open -->
+    <path d="M105 118 Q135 130 178 118 L178 124 Q135 138 105 126 Z" fill="#2a4a2a"/>
+    <!-- teeth -->
+    <polygon points="118,120 121,130 124,120" fill="#fff"/>
+    <polygon points="138,121 141,131 144,121" fill="#fff"/>
+    <polygon points="158,120 161,130 164,120" fill="#fff"/>
+    <!-- nostril -->
+    <ellipse cx="172" cy="100" rx="2.5" ry="3" fill="#2a4a2a"/>
+    <!-- eye -->
+    ${dinoFace(150, 90)}
+    <!-- brow ridge -->
+    <path d="M142 80 Q152 76 162 82" stroke="#3a8a3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- back spikes -->
+    <polygon points="78,128 82,118 86,128" fill="#3a8a3a"/>
+    <polygon points="92,124 96,114 100,124" fill="#3a8a3a"/>
+    <polygon points="106,124 110,114 114,124" fill="#3a8a3a"/>
+  </svg>`},
+
+  // 2. Triceratops
+  { name: "tricera", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${dinoBg("tricera", "#5c9bd6")}
+    <!-- tail -->
+    <path d="M30 175 Q15 175 18 165 Q35 165 55 175 Z" fill="#3a6b96"/>
+    <!-- legs -->
+    <rect x="55" y="185" width="16" height="35" fill="#3a6b96" rx="3"/>
+    <rect x="80" y="190" width="14" height="30" fill="#3a6b96" rx="3"/>
+    <rect x="115" y="190" width="14" height="30" fill="#3a6b96" rx="3"/>
+    <rect x="138" y="185" width="16" height="35" fill="#3a6b96" rx="3"/>
+    <!-- body -->
+    <ellipse cx="100" cy="170" rx="62" ry="35" fill="#5c9bd6"/>
+    <ellipse cx="100" cy="180" rx="48" ry="22" fill="#a8c8e8"/>
+    <!-- frill (back of head) -->
+    <path d="M85 95 Q60 70 65 50 Q100 35 135 50 Q140 70 115 95 Z" fill="#7badd9"/>
+    <path d="M85 95 Q62 75 70 56 Q100 42 130 56 Q138 75 115 95 Z" fill="#5c9bd6"/>
+    <!-- frill spikes -->
+    <polygon points="65,52 68,40 75,50" fill="#3a6b96"/>
+    <polygon points="95,40 98,28 105,40" fill="#3a6b96"/>
+    <polygon points="125,52 128,40 135,50" fill="#3a6b96"/>
+    <!-- head -->
+    <ellipse cx="100" cy="115" rx="38" ry="32" fill="#5c9bd6"/>
+    <!-- horn (top left) -->
+    <path d="M80 92 Q76 70 82 60 Q88 80 88 96 Z" fill="#e8d4a0" stroke="#8a6a3a" stroke-width="1"/>
+    <!-- horn (top right) -->
+    <path d="M120 92 Q124 70 118 60 Q112 80 112 96 Z" fill="#e8d4a0" stroke="#8a6a3a" stroke-width="1"/>
+    <!-- nose horn -->
+    <path d="M97 132 Q95 122 100 118 Q105 122 103 132 Z" fill="#e8d4a0" stroke="#8a6a3a" stroke-width="1"/>
+    <!-- beak -->
+    <path d="M88 138 Q100 148 112 138 Q105 142 100 142 Q95 142 88 138 Z" fill="#3a6b96"/>
+    <!-- eyes -->
+    ${dinoFace(85, 115)}
+    ${dinoFace(115, 115)}
+  </svg>`},
+
+  // 3. Stegosaurus
+  { name: "stego", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${dinoBg("stego", "#a070d4")}
+    <path d="M40 175 Q15 165 12 145 Q30 158 55 175 Z" fill="#6d4296"/>
+    <polygon points="12,148 4,140 16,144" fill="#3a2058"/>
+    <polygon points="14,158 6,154 18,160" fill="#3a2058"/>
+    <ellipse cx="100" cy="170" rx="60" ry="32" fill="#a070d4"/>
+    <ellipse cx="100" cy="180" rx="44" ry="20" fill="#c8a2e8"/>
+    <rect x="60" y="190" width="14" height="30" fill="#6d4296" rx="3"/>
+    <rect x="85" y="195" width="13" height="25" fill="#6d4296" rx="3"/>
+    <rect x="115" y="195" width="13" height="25" fill="#6d4296" rx="3"/>
+    <rect x="140" y="190" width="14" height="30" fill="#6d4296" rx="3"/>
+    <polygon points="58,148 65,118 76,148" fill="#c8a2e8" stroke="#6d4296" stroke-width="1.5"/>
+    <polygon points="76,142 84,108 96,142" fill="#c8a2e8" stroke="#6d4296" stroke-width="1.5"/>
+    <polygon points="96,140 105,102 115,140" fill="#c8a2e8" stroke="#6d4296" stroke-width="1.5"/>
+    <polygon points="115,142 124,108 134,142" fill="#c8a2e8" stroke="#6d4296" stroke-width="1.5"/>
+    <polygon points="134,148 142,118 152,148" fill="#c8a2e8" stroke="#6d4296" stroke-width="1.5"/>
+    <ellipse cx="170" cy="160" rx="20" ry="16" fill="#a070d4"/>
+    <path d="M175 168 Q183 170 188 168" stroke="#3a2058" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    ${dinoFace(175, 156)}
+  </svg>`},
+
+  // 4. Brachiosaurus
+  { name: "brachio", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${dinoBg("brachio", "#e8c850")}
+    <path d="M40 195 Q20 195 18 180 Q35 180 55 192 Z" fill="#a89030"/>
+    <ellipse cx="90" cy="185" rx="55" ry="32" fill="#e8c850"/>
+    <ellipse cx="90" cy="195" rx="40" ry="20" fill="#f0e0a0"/>
+    <rect x="58" y="200" width="16" height="22" fill="#a89030" rx="3"/>
+    <rect x="80" y="205" width="14" height="18" fill="#a89030" rx="3"/>
+    <rect x="105" y="205" width="14" height="18" fill="#a89030" rx="3"/>
+    <rect x="125" y="200" width="16" height="22" fill="#a89030" rx="3"/>
+    <path d="M115 168 Q150 130 155 80 L168 78 Q172 130 130 175 Z" fill="#e8c850"/>
+    <path d="M120 168 Q150 132 156 90 L162 90 Q166 132 132 174 Z" fill="#f0e0a0" opacity="0.6"/>
+    <ellipse cx="160" cy="65" rx="16" ry="13" fill="#e8c850"/>
+    <ellipse cx="172" cy="62" rx="2" ry="2.5" fill="#a89030"/>
+    <path d="M165 72 Q172 74 175 72" stroke="#a89030" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    ${dinoFace(160, 60)}
+    <circle cx="85" cy="180" r="4" fill="#a89030" opacity="0.5"/>
+    <circle cx="105" cy="190" r="3" fill="#a89030" opacity="0.5"/>
+    <circle cx="70" cy="190" r="3" fill="#a89030" opacity="0.5"/>
+  </svg>`},
+
+  // 5. Pteranodon
+  { name: "pterano", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${dinoBg("pterano", "#e8783a")}
+    <path d="M100 130 Q60 100 20 110 Q35 130 60 140 Q80 145 100 145 Z" fill="#e8783a"/>
+    <path d="M100 130 Q70 115 35 122 Q55 132 75 138 Q90 142 100 142 Z" fill="#f0a878" opacity="0.7"/>
+    <path d="M100 130 Q140 100 180 110 Q165 130 140 140 Q120 145 100 145 Z" fill="#e8783a"/>
+    <path d="M100 130 Q130 115 165 122 Q145 132 125 138 Q110 142 100 142 Z" fill="#f0a878" opacity="0.7"/>
+    <ellipse cx="100" cy="150" rx="22" ry="35" fill="#e8783a"/>
+    <ellipse cx="100" cy="155" rx="14" ry="25" fill="#f0a878"/>
+    <path d="M92 182 L88 202 L94 202" stroke="#a85020" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M108 182 L112 202 L106 202" stroke="#a85020" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="105" rx="28" ry="22" fill="#e8783a"/>
+    <path d="M100 90 Q90 70 70 60 Q88 78 96 100 Z" fill="#a85020"/>
+    <path d="M100 110 L155 105 L100 120 Z" fill="#a85020"/>
+    <path d="M100 112 L150 110 L100 118 Z" fill="#fdb88a"/>
+    ${dinoFace(105, 100)}
+  </svg>`},
+
+  // 6. Velociraptor
+  { name: "velo", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${dinoBg("velo", "#d65c5c")}
+    <path d="M40 150 Q15 140 12 115 Q22 130 50 145 Z" fill="#963a3a"/>
+    <path d="M50 145 Q22 132 18 118 Q28 134 55 148 Z" fill="#d65c5c"/>
+    <path d="M22 122 Q15 115 18 108" stroke="#5a2020" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M30 132 Q22 125 26 118" stroke="#5a2020" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="95" cy="155" rx="42" ry="32" fill="#d65c5c"/>
+    <ellipse cx="100" cy="165" rx="28" ry="20" fill="#e8a8a8"/>
+    <path d="M82 180 L75 205 L72 220 L88 220 L90 205 L92 188" fill="#963a3a" stroke="#5a2020" stroke-width="1"/>
+    <path d="M112 180 L105 205 L102 220 L118 220 L120 205 L122 188" fill="#963a3a" stroke="#5a2020" stroke-width="1"/>
+    <polygon points="72,218 70,212 76,218" fill="#fff8d6"/>
+    <polygon points="102,218 100,212 106,218" fill="#fff8d6"/>
+    <path d="M75 145 Q68 158 72 168" stroke="#963a3a" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <polygon points="68,168 60,170 70,174" fill="#fff8d6" stroke="#5a2020" stroke-width="0.5"/>
+    <polygon points="72,170 64,174 74,178" fill="#fff8d6" stroke="#5a2020" stroke-width="0.5"/>
+    <ellipse cx="135" cy="115" rx="38" ry="26" fill="#d65c5c"/>
+    <path d="M150 120 L178 122 L178 130 L150 132 Z" fill="#963a3a"/>
+    <path d="M155 128 L175 128" stroke="#3a1010" stroke-width="1.5"/>
+    <polygon points="158,128 159,134 161,128" fill="#fff"/>
+    <polygon points="168,128 169,134 171,128" fill="#fff"/>
+    <ellipse cx="175" cy="124" rx="1.5" ry="2" fill="#3a1010"/>
+    ${dinoFace(140, 108)}
+    <path d="M115 90 Q108 78 100 80" stroke="#963a3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M122 86 Q116 74 110 76" stroke="#963a3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M130 84 Q126 72 120 74" stroke="#963a3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>`},
+
+  // 7. Ankylosaurus
+  { name: "anky", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${dinoBg("anky", "#8a6a4a")}
+    <path d="M40 175 Q22 175 22 162 Q35 162 52 172 Z" fill="#5a4030"/>
+    <circle cx="22" cy="168" r="14" fill="#5a4030"/>
+    <circle cx="22" cy="168" r="14" fill="none" stroke="#3a2818" stroke-width="2"/>
+    <polygon points="14,160 8,156 16,164" fill="#3a2818"/>
+    <polygon points="14,178 8,182 16,174" fill="#3a2818"/>
+    <ellipse cx="100" cy="175" rx="65" ry="32" fill="#8a6a4a"/>
+    <ellipse cx="100" cy="188" rx="48" ry="20" fill="#c8a890"/>
+    <rect x="55" y="195" width="14" height="25" fill="#5a4030" rx="3"/>
+    <rect x="80" y="200" width="13" height="22" fill="#5a4030" rx="3"/>
+    <rect x="110" y="200" width="13" height="22" fill="#5a4030" rx="3"/>
+    <rect x="135" y="195" width="14" height="25" fill="#5a4030" rx="3"/>
+    <path d="M55 165 Q70 145 100 142 Q130 145 150 165" fill="#5a4030"/>
+    <circle cx="65" cy="160" r="6" fill="#3a2818"/>
+    <circle cx="82" cy="152" r="7" fill="#3a2818"/>
+    <circle cx="100" cy="148" r="8" fill="#3a2818"/>
+    <circle cx="118" cy="152" r="7" fill="#3a2818"/>
+    <circle cx="135" cy="160" r="6" fill="#3a2818"/>
+    <polygon points="55,168 45,165 56,175" fill="#3a2818"/>
+    <polygon points="145,168 155,165 144,175" fill="#3a2818"/>
+    <ellipse cx="165" cy="170" rx="22" ry="18" fill="#8a6a4a"/>
+    <polygon points="155,158 152,148 162,160" fill="#3a2818"/>
+    <polygon points="175,158 178,148 168,160" fill="#3a2818"/>
+    <path d="M170 178 Q178 180 184 178" stroke="#3a2818" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    ${dinoFace(168, 168)}
+  </svg>`},
+
+  // 8. Parasaurolophus
+  { name: "paras", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${dinoBg("paras", "#4ec0a8")}
+    <path d="M30 180 Q12 175 14 158 Q30 165 50 180 Z" fill="#2a8a78"/>
+    <path d="M70 195 L65 222 L82 222 L80 195 Z" fill="#2a8a78"/>
+    <path d="M120 195 L115 222 L132 222 L130 195 Z" fill="#2a8a78"/>
+    <ellipse cx="73" cy="222" rx="10" ry="3" fill="#1a5a48"/>
+    <ellipse cx="123" cy="222" rx="10" ry="3" fill="#1a5a48"/>
+    <ellipse cx="95" cy="170" rx="55" ry="32" fill="#4ec0a8"/>
+    <ellipse cx="100" cy="180" rx="40" ry="22" fill="#a8e0d0"/>
+    <path d="M85 178 L115 178 M82 188 L118 188" stroke="#2a8a78" stroke-width="1.5" opacity="0.5"/>
+    <path d="M85 145 Q78 152 80 162" stroke="#2a8a78" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M125 130 Q138 120 145 110 L155 122 Q145 138 130 145 Z" fill="#4ec0a8"/>
+    <ellipse cx="150" cy="105" rx="28" ry="22" fill="#4ec0a8"/>
+    <path d="M148 115 L182 118 L182 128 L148 128 Z" fill="#2a8a78"/>
+    <path d="M150 118 L178 120 L178 126 L150 126 Z" fill="#a8e0d0"/>
+    <ellipse cx="174" cy="122" rx="1.5" ry="2" fill="#1a5a48"/>
+    <path d="M138 90 Q120 60 95 50 Q92 58 100 65 Q120 72 130 92 Z" fill="#2a8a78"/>
+    <path d="M140 90 Q124 65 102 56 Q104 62 108 66 Q124 75 132 92 Z" fill="#4ec0a8"/>
+    <path d="M120 65 Q116 62 112 60" stroke="#1a5a48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M128 75 Q124 72 120 70" stroke="#1a5a48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    ${dinoFace(155, 100)}
+  </svg>`},
+];
+
+// ==========================================================
+// PRINCESSES DATA
+// ==========================================================
+const PRINCESSES = [
+  { name: "rose", svg: makePrincess({skin:"#ffd9c0", hair:"#f5d76e", hairStyle:"long", dress:"#ff8fb8", dressAccent:"#ffc6da", crown:"tiara", gem:"#ffd86b", cheek:"#ff9bb8", name:"rose"})},
+  { name: "lavender", svg: makePrincess({skin:"#e8c4a0", hair:"#5a3a2a", hairStyle:"bun", dress:"#b58cf0", dressAccent:"#e0ccff", crown:"classic", gem:"#c8a2ff", cheek:"#e89bb8", name:"lavender"})},
+  { name: "ocean", svg: makePrincess({skin:"#f5d4b0", hair:"#1a1a2a", hairStyle:"wavy", dress:"#4ec0d4", dressAccent:"#a8e8f0", crown:"shell", gem:"#ff9ec7", cheek:"#ff9eb6", name:"ocean"})},
+  { name: "sunset", svg: makePrincess({skin:"#f5cfa8", hair:"#c4452a", hairStyle:"curly", dress:"#ff7a4a", dressAccent:"#ffc59a", crown:"heart", gem:"#ff4d6d", cheek:"#ff8c8c", name:"sunset"})},
+  { name: "forest", svg: makePrincess({skin:"#e8b893", hair:"#6b3a1a", hairStyle:"braid", dress:"#5cb85c", dressAccent:"#a8dca8", crown:"leaf", gem:"#7cc97c", cheek:"#e89b8c", name:"forest"})},
+  { name: "star", svg: makePrincess({skin:"#d8a878", hair:"#1a1020", hairStyle:"ponytail", dress:"#3a2a78", dressAccent:"#7a6ac0", crown:"star", gem:"#ffd86b", cheek:"#d8788c", name:"star"})},
+  { name: "snow", svg: makePrincess({skin:"#f8e0d0", hair:"#e8e8f5", hairStyle:"long", dress:"#a8d8f0", dressAccent:"#e0f0ff", crown:"ice", gem:"#c0e0ff", cheek:"#ffb0c0", name:"snow"})},
+  { name: "sunshine", svg: makePrincess({skin:"#ffd0a8", hair:"#e89030", hairStyle:"twin", dress:"#ffd84a", dressAccent:"#fff0a8", crown:"sun", gem:"#ffaa00", cheek:"#ff9b8c", name:"sunshine"})},
+];
+
+// ==========================================================
+// SUPER MARIO CHARACTERS
+// ==========================================================
+function marioBg(name, color) {
+  return `<defs><radialGradient id="mbg-${name}" cx="50%" cy="60%">
+    <stop offset="0%" stop-color="${color}" stop-opacity="0.35"/>
+    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+  </radialGradient></defs>
+  <rect width="200" height="240" fill="url(#mbg-${name})"/>`;
+}
+
+const MARIO_CHARS = [
+  // 1. Mario
+  { name: "mario", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${marioBg("mario", "#e8332a")}
+    <path d="M40 240 L42 195 Q45 175 65 172 L135 172 Q155 175 158 195 L160 240 Z" fill="#1a4ec8"/>
+    <path d="M65 172 L135 172 L138 188 L62 188 Z" fill="#e8332a"/>
+    <rect x="80" y="155" width="14" height="35" fill="#1a4ec8"/>
+    <rect x="106" y="155" width="14" height="35" fill="#1a4ec8"/>
+    <circle cx="87" cy="200" r="3.5" fill="#ffd700" stroke="#a8830a" stroke-width="1"/>
+    <circle cx="113" cy="200" r="3.5" fill="#ffd700" stroke="#a8830a" stroke-width="1"/>
+    <circle cx="40" cy="195" r="13" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+    <circle cx="160" cy="195" r="13" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+    <ellipse cx="100" cy="118" rx="42" ry="40" fill="#fcd9b3"/>
+    <ellipse cx="60" cy="120" rx="7" ry="11" fill="#fcd9b3" stroke="#d4a878" stroke-width="1"/>
+    <ellipse cx="140" cy="120" rx="7" ry="11" fill="#fcd9b3" stroke="#d4a878" stroke-width="1"/>
+    <ellipse cx="100" cy="128" rx="15" ry="12" fill="#fcd9b3" stroke="#c89878" stroke-width="1.5"/>
+    <path d="M68 142 Q82 148 96 142 Q100 150 104 142 Q118 148 132 142 Q130 158 115 158 Q108 156 100 156 Q92 156 85 158 Q70 158 68 142 Z" fill="#3a1e10"/>
+    <ellipse cx="85" cy="108" rx="5" ry="9" fill="#1e1e2e"/>
+    <ellipse cx="115" cy="108" rx="5" ry="9" fill="#1e1e2e"/>
+    <circle cx="86" cy="105" r="2" fill="#fff"/>
+    <circle cx="116" cy="105" r="2" fill="#fff"/>
+    <path d="M78 92 Q85 88 92 92" stroke="#3a1e10" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M108 92 Q115 88 122 92" stroke="#3a1e10" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M93 162 Q100 167 107 162" stroke="#3a1e10" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M52 90 Q55 55 100 50 Q145 55 148 90 L52 90 Z" fill="#e8332a"/>
+    <ellipse cx="100" cy="92" rx="52" ry="7" fill="#c4221a"/>
+    <circle cx="100" cy="73" r="14" fill="#fff"/>
+    <text x="100" y="80" text-anchor="middle" font-size="20" font-weight="900" fill="#e8332a" font-family="Arial Black, Arial, sans-serif">M</text>
+  </svg>`},
+
+  // 2. Luigi
+  { name: "luigi", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${marioBg("luigi", "#1a8a30")}
+    <path d="M45 240 L48 195 Q50 175 70 172 L130 172 Q150 175 152 195 L155 240 Z" fill="#1a4ec8"/>
+    <path d="M70 172 L130 172 L133 188 L67 188 Z" fill="#1a8a30"/>
+    <rect x="82" y="155" width="13" height="35" fill="#1a4ec8"/>
+    <rect x="105" y="155" width="13" height="35" fill="#1a4ec8"/>
+    <circle cx="88" cy="200" r="3.5" fill="#ffd700" stroke="#a8830a" stroke-width="1"/>
+    <circle cx="112" cy="200" r="3.5" fill="#ffd700" stroke="#a8830a" stroke-width="1"/>
+    <circle cx="45" cy="195" r="12" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+    <circle cx="155" cy="195" r="12" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+    <ellipse cx="100" cy="120" rx="38" ry="42" fill="#fcd9b3"/>
+    <ellipse cx="63" cy="122" rx="7" ry="11" fill="#fcd9b3" stroke="#d4a878" stroke-width="1"/>
+    <ellipse cx="137" cy="122" rx="7" ry="11" fill="#fcd9b3" stroke="#d4a878" stroke-width="1"/>
+    <ellipse cx="100" cy="130" rx="13" ry="11" fill="#fcd9b3" stroke="#c89878" stroke-width="1.5"/>
+    <path d="M70 144 Q84 150 96 144 Q100 152 104 144 Q116 150 130 144 Q128 160 114 160 Q108 158 100 158 Q92 158 86 160 Q72 160 70 144 Z" fill="#3a1e10"/>
+    <ellipse cx="86" cy="110" rx="5" ry="9" fill="#1e1e2e"/>
+    <ellipse cx="114" cy="110" rx="5" ry="9" fill="#1e1e2e"/>
+    <circle cx="87" cy="107" r="2" fill="#fff"/>
+    <circle cx="115" cy="107" r="2" fill="#fff"/>
+    <path d="M79 94 Q86 90 93 94" stroke="#3a1e10" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M107 94 Q114 90 121 94" stroke="#3a1e10" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M93 164 Q100 169 107 164" stroke="#3a1e10" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M55 92 Q58 55 100 50 Q142 55 145 92 L55 92 Z" fill="#1a8a30"/>
+    <ellipse cx="100" cy="94" rx="48" ry="7" fill="#0e6a20"/>
+    <circle cx="100" cy="75" r="14" fill="#fff"/>
+    <text x="100" y="82" text-anchor="middle" font-size="20" font-weight="900" fill="#1a8a30" font-family="Arial Black, Arial, sans-serif">L</text>
+  </svg>`},
+
+  // 3. Princess Peach
+  { name: "peach", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${marioBg("peach", "#ff7ab0")}
+    <path d="M40 240 Q35 180 65 175 Q70 165 80 160 L120 160 Q130 165 135 175 Q165 180 160 240 Z" fill="#ff7ab0"/>
+    <path d="M75 175 L125 175 L130 195 L70 195 Z" fill="#e8568a"/>
+    <ellipse cx="100" cy="180" rx="6" ry="8" fill="#5cd0ff" stroke="#fff" stroke-width="1"/>
+    <ellipse cx="55" cy="195" rx="10" ry="14" fill="#fff" stroke="#d4a890" stroke-width="1"/>
+    <ellipse cx="145" cy="195" rx="10" ry="14" fill="#fff" stroke="#d4a890" stroke-width="1"/>
+    <rect x="92" y="148" width="16" height="14" fill="#fcd9b3"/>
+    <path d="M50 90 Q40 130 50 200 L80 200 Q72 140 80 100 Z" fill="#f5d76e"/>
+    <path d="M150 90 Q160 130 150 200 L120 200 Q128 140 120 100 Z" fill="#f5d76e"/>
+    <ellipse cx="100" cy="105" rx="40" ry="44" fill="#fcd9b3"/>
+    <path d="M55 78 Q70 55 100 55 Q130 55 145 78 Q145 92 130 95 Q120 80 100 80 Q80 80 70 95 Q55 92 55 78 Z" fill="#f5d76e"/>
+    <path d="M55 100 Q45 110 50 130" stroke="#f5d76e" stroke-width="6" fill="none"/>
+    <path d="M145 100 Q155 110 150 130" stroke="#f5d76e" stroke-width="6" fill="none"/>
+    <ellipse cx="85" cy="108" rx="5" ry="9" fill="#fff" stroke="#1e1e2e" stroke-width="1"/>
+    <ellipse cx="115" cy="108" rx="5" ry="9" fill="#fff" stroke="#1e1e2e" stroke-width="1"/>
+    <ellipse cx="85" cy="110" rx="3.5" ry="6" fill="#1e7ac8"/>
+    <ellipse cx="115" cy="110" rx="3.5" ry="6" fill="#1e7ac8"/>
+    <circle cx="86" cy="107" r="1.5" fill="#fff"/>
+    <circle cx="116" cy="107" r="1.5" fill="#fff"/>
+    <path d="M78 95 Q85 92 92 95" stroke="#a87830" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M108 95 Q115 92 122 95" stroke="#a87830" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="78" cy="120" rx="5" ry="3" fill="#ff9bb8" opacity="0.6"/>
+    <ellipse cx="122" cy="120" rx="5" ry="3" fill="#ff9bb8" opacity="0.6"/>
+    <path d="M92 130 Q100 135 108 130" stroke="#c43d6e" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="132" rx="6" ry="2" fill="#ff5588"/>
+    <path d="M65 60 L70 40 L82 55 L100 30 L118 55 L130 40 L135 60 L130 65 L70 65 Z" fill="#ffd700" stroke="#a88830" stroke-width="1.5"/>
+    <circle cx="100" cy="42" r="5" fill="#5cd0ff" stroke="#fff" stroke-width="1"/>
+    <circle cx="78" cy="55" r="3" fill="#ff5577"/>
+    <circle cx="122" cy="55" r="3" fill="#ff5577"/>
+  </svg>`},
+
+  // 4. Yoshi
+  { name: "yoshi", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${marioBg("yoshi", "#5cb85c")}
+    <ellipse cx="78" cy="222" rx="14" ry="8" fill="#ff8a30"/>
+    <ellipse cx="122" cy="222" rx="14" ry="8" fill="#ff8a30"/>
+    <ellipse cx="100" cy="190" rx="55" ry="38" fill="#5cb85c"/>
+    <ellipse cx="100" cy="200" rx="36" ry="24" fill="#fff8e8"/>
+    <ellipse cx="55" cy="190" rx="11" ry="14" fill="#5cb85c"/>
+    <ellipse cx="145" cy="190" rx="11" ry="14" fill="#5cb85c"/>
+    <ellipse cx="100" cy="160" rx="42" ry="14" fill="#e8332a"/>
+    <ellipse cx="100" cy="158" rx="38" ry="9" fill="#fff" opacity="0.4"/>
+    <ellipse cx="100" cy="105" rx="48" ry="42" fill="#5cb85c"/>
+    <ellipse cx="100" cy="135" rx="22" ry="14" fill="#5cb85c" stroke="#3a8a3a" stroke-width="1.5"/>
+    <ellipse cx="93" cy="135" rx="2" ry="2.5" fill="#3a1e10"/>
+    <ellipse cx="107" cy="135" rx="2" ry="2.5" fill="#3a1e10"/>
+    <ellipse cx="82" cy="80" rx="14" ry="20" fill="#fff" stroke="#3a8a3a" stroke-width="2"/>
+    <ellipse cx="118" cy="80" rx="14" ry="20" fill="#fff" stroke="#3a8a3a" stroke-width="2"/>
+    <ellipse cx="84" cy="85" rx="6" ry="9" fill="#1e1e2e"/>
+    <ellipse cx="116" cy="85" rx="6" ry="9" fill="#1e1e2e"/>
+    <circle cx="85" cy="82" r="2" fill="#fff"/>
+    <circle cx="117" cy="82" r="2" fill="#fff"/>
+    <path d="M75 145 Q100 156 125 145" stroke="#3a1e10" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="65" cy="130" rx="5" ry="4" fill="#ff7a8c" opacity="0.6"/>
+    <ellipse cx="135" cy="130" rx="5" ry="4" fill="#ff7a8c" opacity="0.6"/>
+  </svg>`},
+
+  // 5. Toad
+  { name: "toad", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${marioBg("toad", "#e8332a")}
+    <ellipse cx="100" cy="195" rx="40" ry="35" fill="#fff" stroke="#d8d8d8" stroke-width="1"/>
+    <path d="M70 178 L130 178 L135 222 L65 222 Z" fill="#3060c8"/>
+    <path d="M70 178 L100 198 L130 178" fill="none" stroke="#1e3a8a" stroke-width="2"/>
+    <ellipse cx="60" cy="200" rx="10" ry="14" fill="#fff" stroke="#d8d8d8" stroke-width="1"/>
+    <ellipse cx="140" cy="200" rx="10" ry="14" fill="#fff" stroke="#d8d8d8" stroke-width="1"/>
+    <ellipse cx="100" cy="135" rx="36" ry="32" fill="#fce8d8"/>
+    <path d="M40 115 Q42 60 100 50 Q158 60 160 115 Q140 120 100 120 Q60 120 40 115 Z" fill="#e8332a"/>
+    <circle cx="100" cy="68" r="14" fill="#fff"/>
+    <circle cx="65" cy="90" r="10" fill="#fff"/>
+    <circle cx="135" cy="90" r="10" fill="#fff"/>
+    <circle cx="60" cy="60" r="6" fill="#fff"/>
+    <circle cx="140" cy="60" r="6" fill="#fff"/>
+    <ellipse cx="100" cy="115" rx="55" ry="6" fill="#c4221a"/>
+    <ellipse cx="85" cy="135" rx="5" ry="9" fill="#1e1e2e"/>
+    <ellipse cx="115" cy="135" rx="5" ry="9" fill="#1e1e2e"/>
+    <circle cx="86" cy="132" r="2" fill="#fff"/>
+    <circle cx="116" cy="132" r="2" fill="#fff"/>
+    <ellipse cx="72" cy="150" rx="5" ry="4" fill="#ff9bb8" opacity="0.7"/>
+    <ellipse cx="128" cy="150" rx="5" ry="4" fill="#ff9bb8" opacity="0.7"/>
+    <ellipse cx="100" cy="155" rx="6" ry="7" fill="#3a1e10"/>
+  </svg>`},
+
+  // 6. Bowser
+  { name: "bowser", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${marioBg("bowser", "#5cb85c")}
+    <ellipse cx="100" cy="195" rx="62" ry="38" fill="#3a8a3a"/>
+    <ellipse cx="100" cy="200" rx="48" ry="26" fill="#5cb85c"/>
+    <ellipse cx="100" cy="195" rx="62" ry="38" fill="none" stroke="#2a6a2a" stroke-width="3"/>
+    <polygon points="50,170 45,150 60,160" fill="#fff8e8" stroke="#888" stroke-width="1"/>
+    <polygon points="85,160 80,138 95,150" fill="#fff8e8" stroke="#888" stroke-width="1"/>
+    <polygon points="115,160 120,138 105,150" fill="#fff8e8" stroke="#888" stroke-width="1"/>
+    <polygon points="150,170 155,150 140,160" fill="#fff8e8" stroke="#888" stroke-width="1"/>
+    <ellipse cx="50" cy="208" rx="13" ry="17" fill="#f0a050"/>
+    <ellipse cx="150" cy="208" rx="13" ry="17" fill="#f0a050"/>
+    <polygon points="40,220 34,222 42,228" fill="#fff8e8" stroke="#888" stroke-width="0.5"/>
+    <polygon points="160,220 166,222 158,228" fill="#fff8e8" stroke="#888" stroke-width="0.5"/>
+    <ellipse cx="100" cy="120" rx="46" ry="40" fill="#f0a050"/>
+    <path d="M70 138 L130 138 L130 158 Q100 168 70 158 Z" fill="#fce0b8"/>
+    <polygon points="78,138 81,150 84,138" fill="#fff" stroke="#888" stroke-width="0.5"/>
+    <polygon points="92,138 95,150 98,138" fill="#fff" stroke="#888" stroke-width="0.5"/>
+    <polygon points="108,138 111,150 114,138" fill="#fff" stroke="#888" stroke-width="0.5"/>
+    <polygon points="120,138 123,150 117,138" fill="#fff" stroke="#888" stroke-width="0.5"/>
+    <polygon points="68,98 60,75 78,90" fill="#fff8e8" stroke="#888" stroke-width="1"/>
+    <polygon points="132,98 140,75 122,90" fill="#fff8e8" stroke="#888" stroke-width="1"/>
+    <path d="M85 85 Q90 60 100 70 Q110 60 115 85" fill="#e8332a"/>
+    <path d="M88 80 L92 65" stroke="#c4221a" stroke-width="3" stroke-linecap="round"/>
+    <path d="M108 80 L112 65" stroke="#c4221a" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="85" cy="115" rx="6" ry="9" fill="#fff" stroke="#1a1a1a" stroke-width="1"/>
+    <ellipse cx="115" cy="115" rx="6" ry="9" fill="#fff" stroke="#1a1a1a" stroke-width="1"/>
+    <ellipse cx="85" cy="118" rx="3" ry="5" fill="#1e1e2e"/>
+    <ellipse cx="115" cy="118" rx="3" ry="5" fill="#1e1e2e"/>
+    <path d="M76 105 L94 110" stroke="#5a3010" stroke-width="4" stroke-linecap="round"/>
+    <path d="M124 105 L106 110" stroke="#5a3010" stroke-width="4" stroke-linecap="round"/>
+    <rect x="65" y="160" width="70" height="10" fill="#5a3010"/>
+    <polygon points="72,160 75,150 78,160" fill="#fff8e8" stroke="#888" stroke-width="0.5"/>
+    <polygon points="92,160 95,150 98,160" fill="#fff8e8" stroke="#888" stroke-width="0.5"/>
+    <polygon points="112,160 115,150 118,160" fill="#fff8e8" stroke="#888" stroke-width="0.5"/>
+  </svg>`},
+
+  // 7. Goomba
+  { name: "goomba", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${marioBg("goomba", "#8a4a1a")}
+    <path d="M40 175 Q40 80 100 70 Q160 80 160 175 Q160 200 100 200 Q40 200 40 175 Z" fill="#b07030"/>
+    <path d="M40 130 Q40 80 100 70 Q160 80 160 130 Q140 138 100 138 Q60 138 40 130 Z" fill="#8a4a1a"/>
+    <ellipse cx="80" cy="95" rx="14" ry="10" fill="#c8895a" opacity="0.6"/>
+    <ellipse cx="80" cy="148" rx="9" ry="13" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+    <ellipse cx="120" cy="148" rx="9" ry="13" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+    <ellipse cx="80" cy="152" rx="5" ry="8" fill="#1e1e2e"/>
+    <ellipse cx="120" cy="152" rx="5" ry="8" fill="#1e1e2e"/>
+    <path d="M68 132 L92 142" stroke="#3a1e10" stroke-width="5" stroke-linecap="round"/>
+    <path d="M132 132 L108 142" stroke="#3a1e10" stroke-width="5" stroke-linecap="round"/>
+    <path d="M80 175 Q100 188 120 175 L120 178 Q100 192 80 178 Z" fill="#3a1e10"/>
+    <polygon points="85,178 88,188 91,178" fill="#fff"/>
+    <polygon points="109,178 112,188 115,178" fill="#fff"/>
+    <ellipse cx="65" cy="220" rx="22" ry="14" fill="#5a3010"/>
+    <ellipse cx="135" cy="220" rx="22" ry="14" fill="#5a3010"/>
+  </svg>`},
+
+  // 8. Power-up Star
+  { name: "star", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${marioBg("star", "#ffd700")}
+    <circle cx="40" cy="60" r="3" fill="#fff" opacity="0.7"/>
+    <circle cx="160" cy="80" r="4" fill="#fff" opacity="0.7"/>
+    <circle cx="170" cy="180" r="3" fill="#fff" opacity="0.7"/>
+    <circle cx="30" cy="200" r="3" fill="#fff" opacity="0.7"/>
+    <polygon points="100,40 121,98 184,98 134,134 154,196 100,162 46,196 66,134 16,98 79,98"
+             fill="#ffd700" stroke="#5a3010" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="100,55 117,100 165,103 130,128 145,180 100,150 55,180 70,128 35,103 83,100"
+             fill="#ffe855" opacity="0.6"/>
+    <ellipse cx="80" cy="118" rx="6" ry="10" fill="#1e1e2e"/>
+    <ellipse cx="120" cy="118" rx="6" ry="10" fill="#1e1e2e"/>
+    <circle cx="82" cy="115" r="2.5" fill="#fff"/>
+    <circle cx="122" cy="115" r="2.5" fill="#fff"/>
+    <path d="M80 142 Q100 155 120 142" stroke="#5a3010" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>`},
+];
+// ==========================================================
+// PAW PATROL PUPS
+// ==========================================================
+function pupBg(name, color) {
+  return `<defs><radialGradient id="pbg-${name}" cx="50%" cy="60%">
+    <stop offset="0%" stop-color="${color}" stop-opacity="0.35"/>
+    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+  </radialGradient></defs>
+  <rect width="200" height="240" fill="url(#pbg-${name})"/>`;
+}
+
+const PAW_PATROL = [
+  // 1. Chase (police - German Shepherd)
+  { name: "chase", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${pupBg("chase", "#3060e0")}
+    <path d="M40 240 L45 195 Q50 175 70 172 L130 172 Q150 175 155 195 L160 240 Z" fill="#3060e0"/>
+    <path d="M65 175 L135 175 L132 185 L68 185 Z" fill="#1a3a8a"/>
+    <circle cx="100" cy="200" r="14" fill="#ffd700" stroke="#a87830" stroke-width="2"/>
+    <path d="M93 198 L93 192 L100 188 L107 192 L107 198 Q107 205 100 208 Q93 205 93 198 Z" fill="#3060e0"/>
+    <ellipse cx="100" cy="115" rx="42" ry="40" fill="#d4a868"/>
+    <path d="M65 110 Q75 95 100 95 Q125 95 135 110 Q138 130 100 138 Q62 130 65 110 Z" fill="#8a5828"/>
+    <polygon points="62,100 48,80 70,108" fill="#3a1e10"/>
+    <polygon points="138,100 152,80 130,108" fill="#3a1e10"/>
+    <ellipse cx="100" cy="138" rx="20" ry="15" fill="#f0d4a0"/>
+    <ellipse cx="100" cy="130" rx="6" ry="5" fill="#1a1a1a"/>
+    <path d="M100 138 L100 145" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M100 145 Q92 150 88 148" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M100 145 Q108 150 112 148" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="151" rx="5" ry="3" fill="#ff6688"/>
+    <ellipse cx="85" cy="115" rx="5" ry="7" fill="#1a1a1a"/>
+    <ellipse cx="115" cy="115" rx="5" ry="7" fill="#1a1a1a"/>
+    <circle cx="86" cy="113" r="2" fill="#fff"/>
+    <circle cx="116" cy="113" r="2" fill="#fff"/>
+    <ellipse cx="100" cy="80" rx="42" ry="8" fill="#1a3a8a"/>
+    <path d="M65 80 Q60 55 100 50 Q140 55 135 80 Z" fill="#3060e0"/>
+    <circle cx="100" cy="65" r="9" fill="#ffd700" stroke="#a87830" stroke-width="1.5"/>
+    <text x="100" y="69" text-anchor="middle" font-size="11" font-weight="900" fill="#1a3a8a" font-family="Arial Black, sans-serif">P</text>
+    <path d="M58 80 Q100 92 142 80 L138 84 Q100 96 62 84 Z" fill="#0a2a6a"/>
+  </svg>`},
+
+  // 2. Marshall (fire - Dalmatian)
+  { name: "marshall", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${pupBg("marshall", "#e8332a")}
+    <path d="M40 240 L45 195 Q50 175 70 172 L130 172 Q150 175 155 195 L160 240 Z" fill="#e8332a"/>
+    <rect x="55" y="182" width="90" height="5" fill="#ffd700"/>
+    <circle cx="100" cy="200" r="14" fill="#ffd700" stroke="#a87830" stroke-width="2"/>
+    <path d="M100 192 Q97 198 100 205 Q103 198 100 192 Z" fill="#e8332a"/>
+    <path d="M95 196 Q92 202 95 208 Q98 203 95 196 Z" fill="#e8332a"/>
+    <path d="M105 196 Q108 202 105 208 Q102 203 105 196 Z" fill="#e8332a"/>
+    <ellipse cx="100" cy="115" rx="42" ry="40" fill="#fff" stroke="#d8d8d8" stroke-width="1"/>
+    <circle cx="75" cy="100" r="5" fill="#1a1a1a"/>
+    <circle cx="120" cy="100" r="4" fill="#1a1a1a"/>
+    <circle cx="128" cy="125" r="4" fill="#1a1a1a"/>
+    <circle cx="78" cy="130" r="3" fill="#1a1a1a"/>
+    <g transform="rotate(-25 55 125)"><ellipse cx="55" cy="125" rx="13" ry="22" fill="#fff" stroke="#d8d8d8" stroke-width="1"/></g>
+    <g transform="rotate(25 145 125)"><ellipse cx="145" cy="125" rx="13" ry="22" fill="#fff" stroke="#d8d8d8" stroke-width="1"/></g>
+    <circle cx="48" cy="135" r="3" fill="#1a1a1a"/>
+    <circle cx="152" cy="135" r="3" fill="#1a1a1a"/>
+    <ellipse cx="100" cy="138" rx="22" ry="15" fill="#f8f8f8"/>
+    <ellipse cx="100" cy="130" rx="6" ry="5" fill="#1a1a1a"/>
+    <path d="M100 138 L100 145" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M100 145 Q92 150 88 148" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M100 145 Q108 150 112 148" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="151" rx="5" ry="3" fill="#ff6688"/>
+    <ellipse cx="85" cy="115" rx="5" ry="7" fill="#1a1a1a"/>
+    <ellipse cx="115" cy="115" rx="5" ry="7" fill="#1a1a1a"/>
+    <circle cx="86" cy="113" r="2" fill="#fff"/>
+    <circle cx="116" cy="113" r="2" fill="#fff"/>
+    <path d="M55 80 Q55 50 100 45 Q145 50 145 80 L140 84 L60 84 Z" fill="#e8332a" stroke="#8a1010" stroke-width="1.5"/>
+    <path d="M48 82 Q100 96 152 82 L155 86 Q100 100 45 86 Z" fill="#c4221a"/>
+    <ellipse cx="100" cy="62" rx="11" ry="9" fill="#ffd700" stroke="#a87830" stroke-width="1"/>
+    <text x="100" y="66" text-anchor="middle" font-size="10" font-weight="900" fill="#e8332a" font-family="Arial Black, sans-serif">F</text>
+  </svg>`},
+
+  // 3. Skye (aviator - Cockapoo)
+  { name: "skye", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${pupBg("skye", "#ff7ab8")}
+    <path d="M40 240 L45 195 Q50 175 70 172 L130 172 Q150 175 155 195 L160 240 Z" fill="#ff7ab8"/>
+    <circle cx="100" cy="200" r="14" fill="#ffd700" stroke="#a87830" stroke-width="2"/>
+    <path d="M86 198 Q92 194 100 200 Q108 194 114 198" stroke="#ff7ab8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="118" rx="40" ry="42" fill="#f0d4a0"/>
+    <ellipse cx="55" cy="138" rx="14" ry="28" fill="#e8c890"/>
+    <ellipse cx="145" cy="138" rx="14" ry="28" fill="#e8c890"/>
+    <circle cx="55" cy="155" r="6" fill="#d8b878" opacity="0.6"/>
+    <circle cx="145" cy="155" r="6" fill="#d8b878" opacity="0.6"/>
+    <circle cx="50" cy="135" r="5" fill="#d8b878" opacity="0.5"/>
+    <circle cx="150" cy="135" r="5" fill="#d8b878" opacity="0.5"/>
+    <ellipse cx="100" cy="142" rx="18" ry="13" fill="#f8e0b8"/>
+    <ellipse cx="100" cy="135" rx="5" ry="4" fill="#1a1a1a"/>
+    <path d="M100 140 L100 147" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M100 147 Q94 151 90 149" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M100 147 Q106 151 110 149" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="153" rx="4" ry="2.5" fill="#ff6688"/>
+    <ellipse cx="85" cy="115" rx="6" ry="9" fill="#1a1a1a"/>
+    <ellipse cx="115" cy="115" rx="6" ry="9" fill="#1a1a1a"/>
+    <circle cx="87" cy="112" r="2.5" fill="#fff"/>
+    <circle cx="117" cy="112" r="2.5" fill="#fff"/>
+    <path d="M58 90 Q60 55 100 50 Q140 55 142 90 Q140 95 100 95 Q60 95 58 90 Z" fill="#ff7ab8" stroke="#c44888" stroke-width="1.5"/>
+    <ellipse cx="80" cy="78" rx="11" ry="8" fill="#5cd0ff" stroke="#1a3a8a" stroke-width="2"/>
+    <ellipse cx="120" cy="78" rx="11" ry="8" fill="#5cd0ff" stroke="#1a3a8a" stroke-width="2"/>
+    <line x1="91" y1="78" x2="109" y2="78" stroke="#1a3a8a" stroke-width="2"/>
+    <circle cx="80" cy="76" r="3" fill="#fff" opacity="0.7"/>
+    <circle cx="120" cy="76" r="3" fill="#fff" opacity="0.7"/>
+  </svg>`},
+
+  // 4. Rocky (recycler - mixed breed)
+  { name: "rocky", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${pupBg("rocky", "#5cb85c")}
+    <path d="M40 240 L45 195 Q50 175 70 172 L130 172 Q150 175 155 195 L160 240 Z" fill="#5cb85c"/>
+    <circle cx="100" cy="200" r="14" fill="#ffd700" stroke="#a87830" stroke-width="2"/>
+    <path d="M93 192 L100 200 L107 192" stroke="#5cb85c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M92 207 L100 200 L108 207" stroke="#5cb85c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="100" cy="115" rx="42" ry="40" fill="#a8a8b0"/>
+    <path d="M70 115 Q70 145 100 150 Q130 145 130 115 Q130 100 100 100 Q70 100 70 115 Z" fill="#f0f0f0"/>
+    <polygon points="62,95 55,68 75,90" fill="#a8a8b0" stroke="#787880" stroke-width="1"/>
+    <g transform="rotate(30 138 105)"><ellipse cx="138" cy="105" rx="11" ry="20" fill="#a8a8b0"/></g>
+    <ellipse cx="100" cy="138" rx="18" ry="13" fill="#fff"/>
+    <ellipse cx="100" cy="130" rx="5" ry="4" fill="#1a1a1a"/>
+    <path d="M100 135 L100 142" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M100 142 Q94 146 90 144" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M100 142 Q106 146 110 144" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="148" rx="4" ry="2.5" fill="#ff6688"/>
+    <ellipse cx="85" cy="115" rx="5" ry="7" fill="#1a1a1a"/>
+    <ellipse cx="115" cy="115" rx="5" ry="7" fill="#1a1a1a"/>
+    <circle cx="86" cy="113" r="2" fill="#fff"/>
+    <circle cx="116" cy="113" r="2" fill="#fff"/>
+    <path d="M58 88 Q60 60 100 55 Q140 60 142 88 L138 92 L62 92 Z" fill="#3a8a3a"/>
+    <rect x="58" y="80" width="84" height="5" fill="#5cb85c"/>
+    <ellipse cx="100" cy="92" rx="50" ry="4" fill="#2a6a2a"/>
+  </svg>`},
+
+  // 5. Zuma (water rescue - Labrador)
+  { name: "zuma", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${pupBg("zuma", "#ff8a30")}
+    <path d="M40 240 L45 195 Q50 175 70 172 L130 172 Q150 175 155 195 L160 240 Z" fill="#ff8a30"/>
+    <circle cx="100" cy="200" r="14" fill="#ffd700" stroke="#a87830" stroke-width="2"/>
+    <circle cx="100" cy="190" r="2" fill="none" stroke="#ff8a30" stroke-width="2"/>
+    <path d="M100 192 L100 204" stroke="#ff8a30" stroke-width="2" stroke-linecap="round"/>
+    <path d="M93 200 Q100 208 107 200" stroke="#ff8a30" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M97 196 L103 196" stroke="#ff8a30" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="100" cy="115" rx="42" ry="40" fill="#7a4828"/>
+    <g transform="rotate(-20 58 125)"><ellipse cx="58" cy="125" rx="12" ry="22" fill="#5a3818"/></g>
+    <g transform="rotate(20 142 125)"><ellipse cx="142" cy="125" rx="12" ry="22" fill="#5a3818"/></g>
+    <ellipse cx="100" cy="138" rx="20" ry="14" fill="#9a6840"/>
+    <ellipse cx="100" cy="130" rx="6" ry="5" fill="#1a1a1a"/>
+    <path d="M100 138 L100 145" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M100 145 Q92 149 88 147" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M100 145 Q108 149 112 147" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="151" rx="5" ry="3" fill="#ff6688"/>
+    <ellipse cx="85" cy="115" rx="5" ry="7" fill="#1a1a1a"/>
+    <ellipse cx="115" cy="115" rx="5" ry="7" fill="#1a1a1a"/>
+    <circle cx="86" cy="113" r="2" fill="#fff"/>
+    <circle cx="116" cy="113" r="2" fill="#fff"/>
+    <path d="M55 90 Q60 50 100 45 Q140 50 145 90 L142 95 L58 95 Z" fill="#ff8a30" stroke="#c46010" stroke-width="1.5"/>
+    <path d="M58 95 Q100 80 142 95" fill="none" stroke="#c46010" stroke-width="1.5"/>
+    <rect x="76" y="66" width="48" height="14" fill="#1a3a4a" rx="6"/>
+    <ellipse cx="88" cy="73" rx="6" ry="5" fill="#5cd0ff"/>
+    <ellipse cx="112" cy="73" rx="6" ry="5" fill="#5cd0ff"/>
+  </svg>`},
+
+  // 6. Rubble (construction - English Bulldog)
+  { name: "rubble", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${pupBg("rubble", "#ffd700")}
+    <path d="M40 240 L45 195 Q50 175 70 172 L130 172 Q150 175 155 195 L160 240 Z" fill="#ffd700"/>
+    <rect x="50" y="208" width="100" height="4" fill="#fff"/>
+    <rect x="50" y="226" width="100" height="4" fill="#fff"/>
+    <circle cx="100" cy="195" r="14" fill="#ffe55a" stroke="#a87830" stroke-width="2"/>
+    <line x1="100" y1="187" x2="100" y2="203" stroke="#a87830" stroke-width="3" stroke-linecap="round"/>
+    <path d="M93 188 L100 195 L107 188" stroke="#a87830" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M93 202 L100 195 L107 202" stroke="#a87830" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="118" rx="46" ry="38" fill="#e8c878"/>
+    <ellipse cx="80" cy="105" rx="14" ry="10" fill="#c8a858" opacity="0.6"/>
+    <ellipse cx="120" cy="120" rx="14" ry="10" fill="#c8a858" opacity="0.6"/>
+    <path d="M62 100 Q55 115 65 122 Q72 110 70 100 Z" fill="#a87838"/>
+    <path d="M138 100 Q145 115 135 122 Q128 110 130 100 Z" fill="#a87838"/>
+    <ellipse cx="100" cy="142" rx="26" ry="14" fill="#f0d4a0"/>
+    <ellipse cx="100" cy="132" rx="8" ry="6" fill="#1a1a1a"/>
+    <path d="M100 142 L100 150" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M100 150 Q90 155 85 152" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M100 150 Q110 155 115 152" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <polygon points="94,152 94,160 98,158" fill="#fff" stroke="#888" stroke-width="0.5"/>
+    <polygon points="106,152 106,160 102,158" fill="#fff" stroke="#888" stroke-width="0.5"/>
+    <ellipse cx="83" cy="118" rx="5" ry="7" fill="#1a1a1a"/>
+    <ellipse cx="117" cy="118" rx="5" ry="7" fill="#1a1a1a"/>
+    <circle cx="84" cy="116" r="2" fill="#fff"/>
+    <circle cx="118" cy="116" r="2" fill="#fff"/>
+    <path d="M55 88 Q55 60 100 55 Q145 60 145 88 L142 92 L58 92 Z" fill="#ffd700" stroke="#a87830" stroke-width="1.5"/>
+    <path d="M48 88 Q100 100 152 88 L155 92 Q100 102 45 92 Z" fill="#e6b800"/>
+    <line x1="100" y1="55" x2="100" y2="92" stroke="#a87830" stroke-width="2"/>
+  </svg>`},
+
+  // 7. Everest (snow rescue - Husky)
+  { name: "everest", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${pupBg("everest", "#4ec0d4")}
+    <path d="M40 240 L45 195 Q50 175 70 172 L130 172 Q150 175 155 195 L160 240 Z" fill="#4ec0d4"/>
+    <ellipse cx="100" cy="175" rx="40" ry="6" fill="#fff"/>
+    <circle cx="100" cy="200" r="14" fill="#ffd700" stroke="#a87830" stroke-width="2"/>
+    <line x1="100" y1="190" x2="100" y2="210" stroke="#4ec0d4" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="90" y1="200" x2="110" y2="200" stroke="#4ec0d4" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="93" y1="193" x2="107" y2="207" stroke="#4ec0d4" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="107" y1="193" x2="93" y2="207" stroke="#4ec0d4" stroke-width="1.5" stroke-linecap="round"/>
+    <ellipse cx="100" cy="115" rx="42" ry="40" fill="#fff" stroke="#d8d8e8" stroke-width="1"/>
+    <path d="M70 90 Q85 100 85 130 Q70 130 65 110 Z" fill="#a8b8c8"/>
+    <path d="M130 90 Q115 100 115 130 Q130 130 135 110 Z" fill="#a8b8c8"/>
+    <polygon points="60,95 50,55 75,85" fill="#a8b8c8"/>
+    <polygon points="140,95 150,55 125,85" fill="#a8b8c8"/>
+    <polygon points="62,90 56,68 72,82" fill="#fff"/>
+    <polygon points="138,90 144,68 128,82" fill="#fff"/>
+    <ellipse cx="100" cy="138" rx="18" ry="13" fill="#fff"/>
+    <ellipse cx="100" cy="130" rx="5" ry="4" fill="#1a1a1a"/>
+    <path d="M100 135 L100 142" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M100 142 Q94 146 90 144" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M100 142 Q106 146 110 144" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="148" rx="4" ry="2.5" fill="#ff6688"/>
+    <ellipse cx="85" cy="115" rx="6" ry="8" fill="#5cb8d4"/>
+    <ellipse cx="115" cy="115" rx="6" ry="8" fill="#5cb8d4"/>
+    <circle cx="85" cy="115" r="2.5" fill="#1a1a1a"/>
+    <circle cx="115" cy="115" r="2.5" fill="#1a1a1a"/>
+    <circle cx="86" cy="113" r="1" fill="#fff"/>
+    <circle cx="116" cy="113" r="1" fill="#fff"/>
+    <path d="M50 90 Q55 50 100 45 Q145 50 150 90 L142 95 L58 95 Z" fill="#4ec0d4" stroke="#2a8a98" stroke-width="1.5"/>
+    <path d="M48 92 Q60 80 75 88 Q90 80 100 88 Q110 80 125 88 Q140 80 152 92" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </svg>`},
+
+  // 8. Tracker (jungle - Chihuahua)
+  { name: "tracker", svg: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+    ${pupBg("tracker", "#7aa84a")}
+    <path d="M40 240 L45 195 Q50 175 70 172 L130 172 Q150 175 155 195 L160 240 Z" fill="#7aa84a"/>
+    <rect x="55" y="184" width="90" height="4" fill="#5a8a3a"/>
+    <circle cx="100" cy="200" r="14" fill="#ffd700" stroke="#a87830" stroke-width="2"/>
+    <circle cx="100" cy="200" r="9" fill="none" stroke="#5a8a3a" stroke-width="1.5"/>
+    <polygon points="100,193 103,201 100,209 97,201" fill="#5a8a3a"/>
+    <ellipse cx="100" cy="118" rx="38" ry="38" fill="#d4a868"/>
+    <ellipse cx="100" cy="142" rx="20" ry="14" fill="#f0d8b0"/>
+    <polygon points="60,95 35,52 75,85" fill="#d4a868" stroke="#8a5828" stroke-width="1.5"/>
+    <polygon points="140,95 165,52 125,85" fill="#d4a868" stroke="#8a5828" stroke-width="1.5"/>
+    <polygon points="62,90 48,65 72,85" fill="#f0d8b0"/>
+    <polygon points="138,90 152,65 128,85" fill="#f0d8b0"/>
+    <ellipse cx="100" cy="134" rx="5" ry="4" fill="#1a1a1a"/>
+    <path d="M100 139 L100 146" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M100 146 Q94 150 90 148" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M100 146 Q106 150 110 148" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="152" rx="4" ry="2.5" fill="#ff6688"/>
+    <ellipse cx="83" cy="118" rx="6" ry="9" fill="#1a1a1a"/>
+    <ellipse cx="117" cy="118" rx="6" ry="9" fill="#1a1a1a"/>
+    <circle cx="85" cy="115" r="2.5" fill="#fff"/>
+    <circle cx="119" cy="115" r="2.5" fill="#fff"/>
+    <ellipse cx="100" cy="92" rx="38" ry="6" fill="#3a6a2a"/>
+    <path d="M75 92 Q72 68 100 63 Q128 68 125 92 Z" fill="#5a8a3a"/>
+    <rect x="75" y="86" width="50" height="4" fill="#3a6a2a"/>
+  </svg>`},
+];
+
+
+// ==========================================================
+// THEMES
+// ==========================================================
+const PRINCESS_BACK_ICON = `<svg class="card-back-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <path d="M20 60 L30 30 L42 50 L50 22 L58 50 L70 30 L80 60 L75 70 L25 70 Z" fill="#ffd86b" stroke="#fff" stroke-width="2"/>
+  <circle cx="30" cy="30" r="3" fill="#ff5577"/>
+  <circle cx="50" cy="22" r="3.5" fill="#3399ff"/>
+  <circle cx="70" cy="30" r="3" fill="#22cc66"/>
+  <text x="50" y="92" text-anchor="middle" font-size="13" font-weight="900" fill="#fff" font-family="Heebo,sans-serif">נסיכות</text>
+</svg>`;
+
+const DINOSAUR_BACK_ICON = `<svg class="card-back-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="50" cy="55" rx="20" ry="22" fill="#fff" opacity="0.95"/>
+  <ellipse cx="32" cy="36" rx="6" ry="8" fill="#fff" opacity="0.95"/>
+  <ellipse cx="50" cy="28" rx="6" ry="8" fill="#fff" opacity="0.95"/>
+  <ellipse cx="68" cy="36" rx="6" ry="8" fill="#fff" opacity="0.95"/>
+  <text x="50" y="92" text-anchor="middle" font-size="13" font-weight="900" fill="#fff" font-family="Heebo,sans-serif">דינוזאורים</text>
+</svg>`;
+
+const MARIO_BACK_ICON = `<svg class="card-back-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="50,18 60,42 86,42 65,57 73,82 50,67 27,82 35,57 14,42 40,42"
+           fill="#ffd700" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+  <text x="50" y="96" text-anchor="middle" font-size="12" font-weight="900" fill="#fff" font-family="Heebo,sans-serif">סופר מריו</text>
+</svg>`;
+
+const PAWPATROL_BACK_ICON = `<svg class="card-back-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="50" cy="58" rx="18" ry="20" fill="#fff"/>
+  <ellipse cx="32" cy="38" rx="7" ry="9" fill="#fff"/>
+  <ellipse cx="50" cy="28" rx="7" ry="9" fill="#fff"/>
+  <ellipse cx="68" cy="38" rx="7" ry="9" fill="#fff"/>
+  <ellipse cx="20" cy="58" rx="6" ry="8" fill="#fff"/>
+  <ellipse cx="80" cy="58" rx="6" ry="8" fill="#fff"/>
+  <text x="50" y="96" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" font-family="Heebo,sans-serif">מפרץ ההרפתקאות</text>
+</svg>`;
+
+const THEMES = {
+  princesses: {
+    label: "נסיכות",
+    emoji: "👑",
+    title: "👑 משחק הזיכרון של הנסיכות 👑",
+    winMessage: "השלמת את משחק הזיכרון של הנסיכות",
+    cards: PRINCESSES,
+    backIcon: PRINCESS_BACK_ICON,
+  },
+  dinosaurs: {
+    label: "דינוזאורים",
+    emoji: "🦖",
+    title: "🦖 משחק הזיכרון של הדינוזאורים 🦕",
+    winMessage: "השלמת את משחק הזיכרון של הדינוזאורים",
+    cards: DINOSAURS,
+    backIcon: DINOSAUR_BACK_ICON,
+  },
+  mario: {
+    label: "סופר מריו",
+    emoji: "🍄",
+    title: "🍄 משחק הזיכרון של סופר מריו ⭐",
+    winMessage: "השלמת את משחק הזיכרון של סופר מריו",
+    cards: MARIO_CHARS,
+    backIcon: MARIO_BACK_ICON,
+  },
+  pawpatrol: {
+    label: "מפרץ ההרפתקאות",
+    emoji: "🐾",
+    title: "🐾 משחק הזיכרון של מפרץ ההרפתקאות 🚒",
+    winMessage: "השלמת את משחק הזיכרון של מפרץ ההרפתקאות",
+    cards: PAW_PATROL,
+    backIcon: PAWPATROL_BACK_ICON,
+  },
+};
+
+// ==========================================================
+// GAME LOGIC
+// ==========================================================
+const board = document.getElementById("board");
+const movesEl = document.getElementById("moves");
+const pairsEl = document.getElementById("pairs");
+const timerEl = document.getElementById("timer");
+const overlay = document.getElementById("overlay");
+const finalMoves = document.getElementById("finalMoves");
+const finalTime = document.getElementById("finalTime");
+const titleEl = document.getElementById("title");
+const winMessageEl = document.getElementById("winMessage");
+const winEmojiEl = document.getElementById("winEmoji");
+const themePicker = document.getElementById("themePicker");
+
+let cards = [];
+let firstCard = null, secondCard = null, lock = false;
+let moves = 0, pairs = 0;
+let startTime = null, timerInterval = null;
+let currentTheme = "princesses";
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const sec = Math.floor((Date.now() - startTime) / 1000);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    timerEl.textContent = `${m}:${String(s).padStart(2,"0")}`;
+  }, 250);
+}
+function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+function applyTheme(name) {
+  currentTheme = name;
+  const theme = THEMES[name];
+  document.body.classList.remove("theme-princesses", "theme-dinosaurs", "theme-mario", "theme-pawpatrol");
+  document.body.classList.add("theme-" + name);
+  titleEl.textContent = theme.title;
+  winMessageEl.textContent = theme.winMessage;
+  winEmojiEl.textContent = theme.emoji;
+  Array.from(themePicker.children).forEach(b => {
+    b.classList.toggle("active", b.dataset.theme === name);
+  });
+  buildBoard();
+}
+
+function buildThemePicker() {
+  Object.entries(THEMES).forEach(([key, t]) => {
+    const btn = document.createElement("button");
+    btn.className = "theme-btn" + (key === currentTheme ? " active" : "");
+    btn.dataset.theme = key;
+    btn.innerHTML = `<span class="emoji">${t.emoji}</span><span>${t.label}</span>`;
+    btn.addEventListener("click", () => applyTheme(key));
+    themePicker.appendChild(btn);
+  });
+}
+
+function buildBoard() {
+  const theme = THEMES[currentTheme];
+  board.innerHTML = "";
+  cards = [];
+  firstCard = secondCard = null;
+  lock = false;
+  moves = 0; pairs = 0;
+  movesEl.textContent = "0";
+  pairsEl.textContent = "0";
+  timerEl.textContent = "0:00";
+  stopTimer();
+  startTime = null;
+
+  const deck = shuffle([...theme.cards, ...theme.cards].map((p,i) => ({...p, id: i})));
+  deck.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.name = p.name;
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-face card-back">${theme.backIcon}</div>
+        <div class="card-face card-front">${p.svg}</div>
+      </div>
+    `;
+    card.addEventListener("click", () => onFlip(card));
+    board.appendChild(card);
+    cards.push(card);
+  });
+}
+
+function onFlip(card) {
+  if (lock) return;
+  if (card.classList.contains("flipped") || card.classList.contains("matched")) return;
+  if (!startTime) startTimer();
+  card.classList.add("flipped");
+  if (!firstCard) { firstCard = card; return; }
+  secondCard = card;
+  moves++;
+  movesEl.textContent = moves;
+  if (firstCard.dataset.name === secondCard.dataset.name) {
+    setTimeout(() => {
+      firstCard.classList.add("matched");
+      secondCard.classList.add("matched");
+      firstCard = secondCard = null;
+      pairs++;
+      pairsEl.textContent = pairs;
+      if (pairs === THEMES[currentTheme].cards.length) win();
+    }, 350);
+  } else {
+    lock = true;
+    setTimeout(() => {
+      firstCard.classList.remove("flipped");
+      secondCard.classList.remove("flipped");
+      firstCard = secondCard = null;
+      lock = false;
+    }, 900);
+  }
+}
+
+function win() {
+  stopTimer();
+  finalMoves.textContent = moves;
+  finalTime.textContent = timerEl.textContent;
+  setTimeout(() => {
+    overlay.classList.add("show");
+    burstConfetti();
+  }, 500);
+}
+
+function burstConfetti() {
+  const palettes = {
+    princesses: ["#ff6fa3","#8e5cf0","#ffd86b","#4ec0d4","#5cb85c","#ff7a4a"],
+    dinosaurs:  ["#5cb85c","#4ec0a8","#e8c850","#a070d4","#e8783a","#d65c5c"],
+    mario:      ["#e8332a","#1a4ec8","#ffd700","#1a8a30","#ff7ab0","#fcd9b3"],
+    pawpatrol:  ["#3060e0","#e8332a","#ff7ab8","#5cb85c","#ff8a30","#ffd700","#4ec0d4","#7aa84a"],
+  };
+  const palette = palettes[currentTheme] || palettes.princesses;
+  for (let i = 0; i < 90; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.background = palette[Math.floor(Math.random()*palette.length)];
+    c.style.animationDuration = (2 + Math.random() * 2) + "s";
+    c.style.animationDelay = Math.random() * 0.5 + "s";
+    c.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 4500);
+  }
+}
+
+document.getElementById("restart").addEventListener("click", buildBoard);
+document.getElementById("playAgain").addEventListener("click", () => {
+  overlay.classList.remove("show");
+  buildBoard();
+});
+
+buildThemePicker();
+applyTheme("princesses");
+</script>
