@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>משחק הזיכרון</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -64,6 +67,8 @@
   html, body {
     height: 100%;
     font-family: "Heebo", "Rubik", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
     background-attachment: fixed;
     overflow-x: hidden;
@@ -246,12 +251,16 @@
     cursor: pointer;
     min-width: 0;
     min-height: 0;
+    transition: transform 0.18s ease;
+  }
+  .card:not(.matched):not(.flipped):hover {
+    transform: translateY(-4px) scale(1.03);
   }
   .card-inner {
     position: relative;
     width: 100%;
     height: 100%;
-    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     transform-style: preserve-3d;
   }
   .card.flipped .card-inner,
@@ -325,13 +334,21 @@
   .card.matched .card-front {
     background: linear-gradient(180deg, #fff8d6 0%, #ffe9b0 100%);
     border-color: var(--gold);
-    animation: matched-pulse 0.7s ease;
-    box-shadow: 0 0 24px rgba(255,216,107,0.7);
+    animation: matched-pulse 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 28px rgba(255,216,107,0.85), 0 0 0 4px rgba(255, 216, 107, 0.4);
+  }
+  .card.matched {
+    animation: matched-glow 1.6s ease-in-out infinite;
   }
   @keyframes matched-pulse {
     0% { transform: scale(1); }
-    50% { transform: scale(1.06); }
-    100% { transform: scale(1); }
+    40% { transform: scale(1.10) rotate(-3deg); }
+    70% { transform: scale(1.04) rotate(2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  @keyframes matched-glow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.08); }
   }
 
   /* Win overlay */
@@ -355,26 +372,102 @@
   .modal {
     background: linear-gradient(180deg, #fff 0%, #fff5fa 100%);
     border-radius: 28px;
-    padding: 36px 32px;
+    padding: 32px 28px 28px;
     text-align: center;
-    max-width: 380px;
+    max-width: 400px;
     width: 90%;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.6) inset;
+    animation: pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   body.theme-dinosaurs .modal {
     background: linear-gradient(180deg, #fff 0%, #f0fae0 100%);
   }
   @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   .modal h2 {
-    font-size: 32px;
+    font-size: 36px;
+    font-family: "Fredoka", "Heebo", sans-serif;
+    font-weight: 700;
     background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     margin-bottom: 8px;
+    letter-spacing: -0.5px;
   }
-  .modal .crown { font-size: 60px; margin-bottom: 8px; }
+  .modal .crown {
+    font-size: 60px;
+    margin-bottom: 8px;
+    display: inline-block;
+    animation: trophy-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both, trophy-bob 2.5s ease-in-out infinite 0.7s;
+  }
+  @keyframes trophy-pop {
+    from { transform: scale(0) rotate(-180deg); opacity: 0; }
+    to   { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  @keyframes trophy-bob {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    50% { transform: translateY(-6px) rotate(3deg); }
+  }
+
+  /* Star rating */
+  .stars {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 14px 0 10px;
+  }
+  .star-icon {
+    width: 38px;
+    height: 38px;
+    display: inline-block;
+    opacity: 0.25;
+    transform: scale(0.85);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .star-icon.filled {
+    opacity: 1;
+    transform: scale(1);
+    filter: drop-shadow(0 2px 6px rgba(255, 184, 0, 0.6));
+  }
+  .star-icon.filled:nth-child(1) { transition-delay: 0.4s; }
+  .star-icon.filled:nth-child(2) { transition-delay: 0.7s; }
+  .star-icon.filled:nth-child(3) { transition-delay: 1.0s; }
+  .star-icon svg { width: 100%; height: 100%; }
+
+  .new-best-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffd700, #ff9800);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+    animation: new-best-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s both;
+  }
+  .new-best-badge:not(.show) { display: none; }
+  @keyframes new-best-in {
+    from { opacity: 0; transform: scale(0.5); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn.secondary {
+    background: white;
+    color: var(--text-strong);
+    border: 2px solid var(--accent-2);
+  }
+  .btn.secondary:hover {
+    background: var(--bg2);
+  }
   .modal p { color: var(--text-strong); margin-bottom: 8px; font-size: 16px; }
   .modal .stats-row {
     display: flex;
@@ -410,29 +503,78 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  /* Twinkling sparkle background */
+  .landing::before, .landing::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 12% 20%, rgba(255,255,255,0.9) 0, transparent 2px),
+      radial-gradient(circle at 25% 75%, rgba(255,255,255,0.85) 0, transparent 2.5px),
+      radial-gradient(circle at 48% 12%, rgba(255,255,255,0.8) 0, transparent 2px),
+      radial-gradient(circle at 65% 38%, rgba(255,255,255,0.9) 0, transparent 2.5px),
+      radial-gradient(circle at 82% 85%, rgba(255,255,255,0.85) 0, transparent 2px),
+      radial-gradient(circle at 92% 25%, rgba(255,255,255,0.9) 0, transparent 3px),
+      radial-gradient(circle at 8% 92%, rgba(255,255,255,0.8) 0, transparent 2px),
+      radial-gradient(circle at 38% 88%, rgba(255,255,255,0.9) 0, transparent 2.5px);
+    background-size: 100% 100%;
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  .landing::after {
+    background-image:
+      radial-gradient(circle at 30% 30%, rgba(255,215,107,0.6) 0, transparent 3px),
+      radial-gradient(circle at 70% 60%, rgba(200,162,255,0.6) 0, transparent 3px),
+      radial-gradient(circle at 50% 80%, rgba(255,180,210,0.6) 0, transparent 3px),
+      radial-gradient(circle at 85% 15%, rgba(140,200,255,0.6) 0, transparent 3px);
+    animation: twinkle 5s ease-in-out infinite reverse;
+    animation-delay: 1.5s;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
   }
   .landing.hidden {
     opacity: 0;
+    transform: scale(0.96);
     pointer-events: none;
   }
   .landing-title {
-    font-size: clamp(28px, 5vw, 48px);
-    font-weight: 900;
+    font-size: clamp(32px, 6vw, 56px);
+    font-family: "Fredoka", "Heebo", sans-serif;
+    font-weight: 700;
     background: linear-gradient(90deg, #ff6fa3, #8e5cf0, #3060e0, #5cb85c);
+    background-size: 200% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     margin-bottom: 6px;
     text-align: center;
-    letter-spacing: -0.5px;
+    letter-spacing: -1px;
+    animation: gradient-shift 6s ease-in-out infinite, title-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 4px 12px rgba(142, 92, 240, 0.25));
+  }
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes title-in {
+    from { opacity: 0; transform: translateY(-30px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
   .landing-subtitle {
     color: #6b2d8a;
-    font-size: clamp(13px, 2vw, 17px);
+    font-size: clamp(14px, 2vw, 18px);
     font-weight: 600;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
     text-align: center;
+    position: relative;
+    z-index: 2;
+    animation: title-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
   }
   .menu-grid {
     display: grid;
@@ -440,6 +582,8 @@
     gap: 16px;
     width: 100%;
     max-width: 720px;
+    position: relative;
+    z-index: 2;
   }
   @media (min-width: 880px) {
     .menu-grid { grid-template-columns: repeat(4, 1fr); max-width: 1100px; }
@@ -452,45 +596,104 @@
   .theme-card-menu {
     background: white;
     border: 4px solid white;
-    border-radius: 22px;
-    padding: 14px 12px 12px;
+    border-radius: 24px;
+    padding: 16px 14px 14px;
     cursor: pointer;
-    box-shadow: 0 10px 30px rgba(80, 40, 120, 0.18);
-    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+    box-shadow:
+      0 4px 12px rgba(80, 40, 120, 0.08),
+      0 14px 32px rgba(80, 40, 120, 0.18);
+    transition:
+      transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.35s ease,
+      border-color 0.25s;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
     position: relative;
     overflow: hidden;
+    animation: card-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .theme-card-menu:nth-child(1) { animation-delay: 0.15s; }
+  .theme-card-menu:nth-child(2) { animation-delay: 0.25s; }
+  .theme-card-menu:nth-child(3) { animation-delay: 0.35s; }
+  .theme-card-menu:nth-child(4) { animation-delay: 0.45s; }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(40px) scale(0.92); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
   }
   .theme-card-menu::before {
     content: "";
     position: absolute;
     inset: 0;
     background: var(--card-bg, linear-gradient(135deg, #ffe9f3, #f3e0ff));
-    opacity: 0.5;
+    opacity: 0.55;
     z-index: 0;
+  }
+  /* Glow on hover */
+  .theme-card-menu::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 26px;
+    background: var(--card-cta-bg, linear-gradient(135deg, #ff6fa3, #8e5cf0));
+    opacity: 0;
+    z-index: -1;
+    filter: blur(18px);
+    transition: opacity 0.35s ease;
   }
   .theme-card-menu > * { position: relative; z-index: 1; }
   .theme-card-menu:hover {
-    transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 18px 40px rgba(80, 40, 120, 0.28);
+    transform: translateY(-10px) scale(1.04);
+    box-shadow:
+      0 6px 18px rgba(80, 40, 120, 0.10),
+      0 22px 48px rgba(80, 40, 120, 0.30);
     border-color: var(--card-border, #ff6fa3);
   }
+  .theme-card-menu:hover::after { opacity: 0.55; }
+  .theme-card-menu:hover .theme-card-previews svg { transform: translateY(-3px); }
+  .theme-card-menu:hover .theme-card-emoji { animation: bounce-emoji 0.7s ease infinite; }
+  @keyframes bounce-emoji {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    50% { transform: translateY(-6px) rotate(3deg); }
+  }
   .theme-card-menu:active {
-    transform: translateY(-2px) scale(1);
+    transform: translateY(-4px) scale(1.01);
+    transition-duration: 0.1s;
   }
   .theme-card-emoji {
-    font-size: 32px;
+    font-size: 36px;
     line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+    transform-origin: center;
   }
   .theme-card-name {
-    font-size: clamp(15px, 1.6vw, 19px);
-    font-weight: 900;
+    font-size: clamp(15px, 1.7vw, 20px);
+    font-family: "Fredoka", "Heebo", sans-serif;
+    font-weight: 700;
     color: var(--card-text, #6b2d8a);
     text-align: center;
+    letter-spacing: -0.3px;
   }
+  .theme-card-best {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(6px);
+    color: var(--card-text, #6b2d8a);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 9px;
+    border-radius: 999px;
+    z-index: 2;
+    display: none;
+    align-items: center;
+    gap: 3px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .theme-card-best.show { display: inline-flex; }
+  .theme-card-best .star { color: #ffb800; font-size: 11px; }
   .theme-card-previews {
     display: flex;
     gap: 4px;
@@ -502,18 +705,28 @@
     width: 33%;
     height: auto;
     max-height: 130px;
-    border-radius: 10px;
+    border-radius: 12px;
     background: rgba(255,255,255,0.7);
     border: 2px solid rgba(255,255,255,0.9);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
+  .theme-card-previews svg:nth-child(2) { transition-delay: 0.05s; }
+  .theme-card-previews svg:nth-child(3) { transition-delay: 0.1s; }
   .theme-card-cta {
     background: var(--card-cta-bg, linear-gradient(135deg, #ff6fa3, #8e5cf0));
     color: white;
     border-radius: 999px;
-    padding: 6px 18px;
-    font-size: 13px;
+    padding: 8px 22px;
+    font-size: 14px;
     font-weight: 800;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-family: "Fredoka", "Heebo", sans-serif;
+    letter-spacing: 0.3px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    transition: transform 0.2s ease;
+  }
+  .theme-card-menu:hover .theme-card-cta {
+    transform: scale(1.06);
   }
   /* Theme card color variants */
   .theme-card-menu.t-princesses { --card-bg: linear-gradient(135deg,#ffe9f3,#f3e0ff); --card-border:#ff6fa3; --card-text:#6b2d8a; --card-cta-bg: linear-gradient(135deg,#ff6fa3,#8e5cf0); }
@@ -589,11 +802,20 @@
     <div class="crown" id="winEmoji">👑</div>
     <h2>כל הכבוד!</h2>
     <p id="winMessage">השלמת את משחק הזיכרון</p>
+    <div class="stars" id="starsRow">
+      <div class="star-icon" data-i="0"><svg viewBox="0 0 50 50"><polygon points="25,3 31,18 47,18 34,29 38,46 25,36 12,46 16,29 3,18 19,18" fill="#ffb800" stroke="#a87830" stroke-width="2" stroke-linejoin="round"/></svg></div>
+      <div class="star-icon" data-i="1"><svg viewBox="0 0 50 50"><polygon points="25,3 31,18 47,18 34,29 38,46 25,36 12,46 16,29 3,18 19,18" fill="#ffb800" stroke="#a87830" stroke-width="2" stroke-linejoin="round"/></svg></div>
+      <div class="star-icon" data-i="2"><svg viewBox="0 0 50 50"><polygon points="25,3 31,18 47,18 34,29 38,46 25,36 12,46 16,29 3,18 19,18" fill="#ffb800" stroke="#a87830" stroke-width="2" stroke-linejoin="round"/></svg></div>
+    </div>
+    <div class="new-best-badge" id="newBestBadge">⭐ שיא חדש!</div>
     <div class="stats-row">
       <div class="stat"><div><div class="label">מהלכים</div><div class="value" id="finalMoves">0</div></div></div>
       <div class="stat"><div><div class="label">זמן</div><div class="value" id="finalTime">0:00</div></div></div>
     </div>
-    <button class="btn" id="playAgain">לשחק שוב</button>
+    <div class="modal-actions">
+      <button class="btn" id="playAgain">לשחק שוב</button>
+      <button class="btn secondary" id="changeTheme">ערכה אחרת</button>
+    </div>
   </div>
 </div>
 
@@ -1492,43 +1714,13 @@ const PAWPATROL_BACK_ICON = `<svg class="card-back-icon" viewBox="0 0 100 100" x
 </svg>`;
 
 const THEMES = {
-  princesses: {
-    label: "נסיכות",
-    emoji: "👑",
-    title: "👑 משחק הזיכרון של הנסיכות 👑",
-    winMessage: "השלמת את משחק הזיכרון של הנסיכות",
-    cards: PRINCESSES,
-    backIcon: PRINCESS_BACK_ICON,
-  },
-  dinosaurs: {
-    label: "דינוזאורים",
-    emoji: "🦖",
-    title: "🦖 משחק הזיכרון של הדינוזאורים 🦕",
-    winMessage: "השלמת את משחק הזיכרון של הדינוזאורים",
-    cards: DINOSAURS,
-    backIcon: DINOSAUR_BACK_ICON,
-  },
-  mario: {
-    label: "סופר מריו",
-    emoji: "🍄",
-    title: "🍄 משחק הזיכרון של סופר מריו ⭐",
-    winMessage: "השלמת את משחק הזיכרון של סופר מריו",
-    cards: MARIO_CHARS,
-    backIcon: MARIO_BACK_ICON,
-  },
-  pawpatrol: {
-    label: "מפרץ ההרפתקאות",
-    emoji: "🐾",
-    title: "🐾 משחק הזיכרון של מפרץ ההרפתקאות 🚒",
-    winMessage: "השלמת את משחק הזיכרון של מפרץ ההרפתקאות",
-    cards: PAW_PATROL,
-    backIcon: PAWPATROL_BACK_ICON,
-  },
+  princesses: { label:"נסיכות", emoji:"👑", title:"👑 משחק הזיכרון של הנסיכות 👑", winMessage:"השלמת את משחק הזיכרון של הנסיכות", cards:PRINCESSES, backIcon:PRINCESS_BACK_ICON },
+  dinosaurs:  { label:"דינוזאורים", emoji:"🦖", title:"🦖 משחק הזיכרון של הדינוזאורים 🦕", winMessage:"השלמת את משחק הזיכרון של הדינוזאורים", cards:DINOSAURS, backIcon:DINOSAUR_BACK_ICON },
+  mario:      { label:"סופר מריו", emoji:"🍄", title:"🍄 משחק הזיכרון של סופר מריו ⭐", winMessage:"השלמת את משחק הזיכרון של סופר מריו", cards:MARIO_CHARS, backIcon:MARIO_BACK_ICON },
+  pawpatrol:  { label:"מפרץ ההרפתקאות", emoji:"🐾", title:"🐾 משחק הזיכרון של מפרץ ההרפתקאות 🚒", winMessage:"השלמת את משחק הזיכרון של מפרץ ההרפתקאות", cards:PAW_PATROL, backIcon:PAWPATROL_BACK_ICON },
 };
 
-// ==========================================================
-// GAME LOGIC
-// ==========================================================
+// ====== GAME LOGIC ======
 const board = document.getElementById("board");
 const movesEl = document.getElementById("moves");
 const pairsEl = document.getElementById("pairs");
@@ -1541,8 +1733,7 @@ const winMessageEl = document.getElementById("winMessage");
 const winEmojiEl = document.getElementById("winEmoji");
 const themePicker = document.getElementById("themePicker");
 
-let cards = [];
-let firstCard = null, secondCard = null, lock = false;
+let cards = [], firstCard = null, secondCard = null, lock = false;
 let moves = 0, pairs = 0;
 let startTime = null, timerInterval = null;
 let currentTheme = "princesses";
@@ -1559,9 +1750,7 @@ function startTimer() {
   startTime = Date.now();
   timerInterval = setInterval(() => {
     const sec = Math.floor((Date.now() - startTime) / 1000);
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    timerEl.textContent = `${m}:${String(s).padStart(2,"0")}`;
+    timerEl.textContent = `${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`;
   }, 250);
 }
 function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
@@ -1575,7 +1764,7 @@ function applyTheme(name) {
   winMessageEl.textContent = theme.winMessage;
   winEmojiEl.textContent = theme.emoji;
   Array.from(themePicker.children).forEach(b => {
-    b.classList.toggle("active", b.dataset.theme === name);
+    if (b.dataset.theme) b.classList.toggle("active", b.dataset.theme === name);
   });
   buildBoard();
 }
@@ -1594,27 +1783,19 @@ function buildThemePicker() {
 function buildBoard() {
   const theme = THEMES[currentTheme];
   board.innerHTML = "";
-  cards = [];
-  firstCard = secondCard = null;
-  lock = false;
+  cards = []; firstCard = secondCard = null; lock = false;
   moves = 0; pairs = 0;
   movesEl.textContent = "0";
   pairsEl.textContent = "0";
   timerEl.textContent = "0:00";
-  stopTimer();
-  startTime = null;
+  stopTimer(); startTime = null;
 
   const deck = shuffle([...theme.cards, ...theme.cards].map((p,i) => ({...p, id: i})));
   deck.forEach(p => {
     const card = document.createElement("div");
     card.className = "card";
     card.dataset.name = p.name;
-    card.innerHTML = `
-      <div class="card-inner">
-        <div class="card-face card-back">${theme.backIcon}</div>
-        <div class="card-face card-front">${p.svg}</div>
-      </div>
-    `;
+    card.innerHTML = `<div class="card-inner"><div class="card-face card-back">${theme.backIcon}</div><div class="card-face card-front">${p.svg}</div></div>`;
     card.addEventListener("click", () => onFlip(card));
     board.appendChild(card);
     cards.push(card);
@@ -1650,13 +1831,45 @@ function onFlip(card) {
   }
 }
 
+// ====== STARS + BEST SCORE ======
+function calcStars(moves, pairCount) {
+  const ratio = moves / pairCount;
+  if (ratio <= 1.6) return 3;
+  if (ratio <= 2.4) return 2;
+  return 1;
+}
+function loadBest(themeKey) {
+  try { const raw = localStorage.getItem("memorygame.best." + themeKey); return raw ? JSON.parse(raw) : null; }
+  catch { return null; }
+}
+function saveBest(themeKey, record) {
+  try { localStorage.setItem("memorygame.best." + themeKey, JSON.stringify(record)); } catch {}
+}
+function showStars(n) {
+  const stars = document.querySelectorAll("#starsRow .star-icon");
+  stars.forEach(s => s.classList.remove("filled"));
+  setTimeout(() => stars.forEach((s, i) => { if (i < n) s.classList.add("filled"); }), 200);
+}
+
 function win() {
   stopTimer();
   finalMoves.textContent = moves;
   finalTime.textContent = timerEl.textContent;
+  const pairCount = THEMES[currentTheme].cards.length;
+  const stars = calcStars(moves, pairCount);
+  const elapsed = Math.floor((Date.now() - (startTime || Date.now())) / 1000);
+  const prev = loadBest(currentTheme);
+  let isNewBest = false;
+  if (!prev || moves < prev.moves || (moves === prev.moves && elapsed < prev.timeSec)) {
+    saveBest(currentTheme, { moves, timeSec: elapsed, stars, when: Date.now() });
+    isNewBest = true;
+  }
   setTimeout(() => {
     overlay.classList.add("show");
+    showStars(stars);
+    document.getElementById("newBestBadge").classList.toggle("show", isNewBest);
     burstConfetti();
+    updateMenuBests();
   }, 500);
 }
 
@@ -1686,8 +1899,12 @@ document.getElementById("playAgain").addEventListener("click", () => {
   overlay.classList.remove("show");
   buildBoard();
 });
+document.getElementById("changeTheme").addEventListener("click", () => {
+  overlay.classList.remove("show");
+  showMenu();
+});
 
-// ============== LANDING / MAIN MENU ==============
+// ====== LANDING / MAIN MENU ======
 const landing = document.getElementById("landing");
 const menuGrid = document.getElementById("menuGrid");
 const homeBtn = document.getElementById("homeBtn");
@@ -1695,45 +1912,52 @@ const homeBtn = document.getElementById("homeBtn");
 function buildMenu() {
   menuGrid.innerHTML = "";
   Object.entries(THEMES).forEach(([key, t]) => {
-    // pick 3 sample characters as preview
     const samples = [t.cards[0], t.cards[3] || t.cards[1], t.cards[5] || t.cards[2]];
     const previewsHtml = samples.map(c => c.svg).join("");
     const card = document.createElement("div");
     card.className = "theme-card-menu t-" + key;
     card.dataset.theme = key;
     card.innerHTML = `
+      <div class="theme-card-best"></div>
       <div class="theme-card-emoji">${t.emoji}</div>
       <div class="theme-card-name">${t.label}</div>
       <div class="theme-card-previews">${previewsHtml}</div>
       <div class="theme-card-cta">לשחק ▶</div>
     `;
-    card.addEventListener("click", () => {
-      hideMenu();
-      applyTheme(key);
-    });
+    card.addEventListener("click", () => { hideMenu(); applyTheme(key); });
     menuGrid.appendChild(card);
+  });
+  updateMenuBests();
+}
+
+function updateMenuBests() {
+  Object.keys(THEMES).forEach(key => {
+    const el = document.querySelector(`.theme-card-menu[data-theme="${key}"] .theme-card-best`);
+    if (!el) return;
+    const best = loadBest(key);
+    if (best) {
+      const stars = "★".repeat(best.stars);
+      el.innerHTML = `<span class="star">${stars}</span> ${best.moves} מהלכים`;
+      el.classList.add("show");
+    } else {
+      el.classList.remove("show");
+    }
   });
 }
 
 function showMenu() {
-  // Reset game state
-  stopTimer();
-  startTime = null;
+  stopTimer(); startTime = null;
+  overlay.classList.remove("show");
   landing.classList.remove("hidden");
 }
-
-function hideMenu() {
-  landing.classList.add("hidden");
-}
+function hideMenu() { landing.classList.add("hidden"); }
 
 homeBtn.addEventListener("click", showMenu);
 
-// init
+// ====== INIT ======
 buildThemePicker();
 buildMenu();
-// Pre-build the board with the default theme (won't be visible until menu is dismissed)
 applyTheme("princesses");
-// But show menu instead of going straight into the game
 showMenu();
 </script>
 </body>
